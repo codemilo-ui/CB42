@@ -1,0 +1,9 @@
+py-cord
+certifi
+PyNaCl
+motor
+requests
+randfacts
+pymongo
+dnspython
+python-dotenv
