@@ -5,7 +5,7 @@ import datetime
 from datetime import *
 from dotenv import load_dotenv
 import discord
-from discord import Option
+from discord import *
 from discord.ext import commands
 from discord.ext.commands import *
 from discord.ui import *
@@ -436,29 +436,50 @@ async def on_command_error(ctx, error):
 # SLASH
 
 
-@client.slash_command(name='mute', description="mutes/timeouts a member")
-@commands.has_permissions(moderate_members=True)
-async def mute(ctx, member: Option(discord.Member, required=True), reason: Option(str, required=False), days: Option(int, max_value=15, default=0, required=False), hours: Option(int, default=0, required=False), minutes: Option(int, default=0, required=True), seconds: Option(int, default=0, required=False)):
-    if member.id == ctx.author.id:
-        await ctx.respond("You can't mute yourself!", ephemeral=True)
-        return
-    d = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
-    if d >= timedelta(days=16):
-        await ctx.respond("I can't mute someone for more than 28 days!", ephemeral=True)
+async def timeout_user(ctx, member, reason, timeouttime):
+    duration = timedelta(seconds=timeouttime)
+    try:
+        await member.timeout_for(duration, reason=reason)
+    except HTTPException:
+        await ctx.reply(
+            'I failed to Timeout this member due to a Discord Server error'
+        )
+        return False
+    return True
+
+
+@client.slash_command(description="mutes a member")
+@commands.has_permissions(kick_members=True)
+@option("user", discord.Member, description="Whom you want mute?")
+@option("duration", description="How long they should be muted?")
+@option("duration_type", description="How long should they be muted?", choices=["Seconds", "Hours", "Days"])
+@option("reason", description="Why do you want mute this member?", default=None)
+async def mute(ctx, user: discord.Member, duration: int, duration_type: str, reason: str):
+    if user.id == ctx.author.id:
+        await ctx.respond(embed=discord.Embed(description=f"*You can't timeout yourself*"))
         return
     if reason == None:
-        await member.timeout_for(d)
-        await ctx.respond(f"<@{member.id}> has been muted for {days} days, {hours} hours, {minutes} minutes, and {seconds} seconds by <@{ctx.author.id}>")
-    else:
-        await member.timeout_for(d, reason=reason)
-        await ctx.respond(f"<@{member.id}> has been muted for {days} days, {hours} hours, {minutes} minutes, and {seconds} seconds by <@{ctx.author.id}> for `{reason}`")
+        reason = "Not Provided"
+    if duration_type == "Hours":
+        time = int(duration)*3600
+    elif duration_type == "Days":
+        time = int(duration)*86400
+    elif duration_type == "Seconds":
+        time = int(duration)
+    responce_check = await timeout_user(ctx, user, reason, time)
+    if responce_check == True:
+        timeout_embed = discord.Embed(
+            description=f"*`{user}` has been timeout by `{ctx.author}`*")
+        timeout_embed.set_footer(text=f"Reason: {reason}")
+        await ctx.respond(embed=timeout_embed)
 
 
-@client.slash_command(name='unmute', description="Unmutes a member")
+@client.slash_command(name='unmute', description="Unmutes the member")
 @commands.has_permissions(moderate_members=True)
+@commands.cooldown(1, 5, commands.BucketType.user)
 async def unmute(ctx, member: Option(discord.Member, required=True)):
     await member.remove_timeout()
-    await ctx.respond(f"<@{member.id}> has been unmuted by <@{ctx.author.id}>")
+    await ctx.respond(f"<@{member.id}> has been unmuted by <@{ctx.author.id}>.")
 
 
 @client.slash_command(aliases=['prefix'])
@@ -580,16 +601,118 @@ async def dice(ctx):
     await ctx.respond(f"Your random number is: {random.choice(num)}", ephemeral=True)
 
 
-@client.slash_command(name="kick", description="Kick a member")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.has_permissions(kick_members=True)
-async def kick(ctx, member: discord.Member = None, *, reason=None):
-    if member == None:
-        await ctx.respond("Mention the member to be kicked!", ephemeral=True)
-    if reason == None:
-        reason = "None"
+async def kick_user(ctx, member, reason):
     await member.kick(reason=reason)
-    await ctx.respond(f"Successfully kicked {member.mention}")
+    return True
+
+
+async def ban_user(ctx, member, reason):
+    await member.ban(reason=reason)
+    return True
+
+
+@client.slash_command(description="Kick a member from the server")
+@commands.has_permissions(kick_members=True)
+async def kick(ctx, user: discord.Option(discord.Member, description="Please select a user to kick", required=True), reason: discord.Option(str, description="Why do you want to kick?", required=False)):
+    if user.id == ctx.author.id:
+        await ctx.respond(embed=discord.Embed(description=f"*You can't kick yourself*", color=discord.Color.red()))
+        return
+    kick_embed = discord.Embed(
+        description=f"*Please confirm to kick {user}*", color=discord.Color.blurple())
+    confirm = Button(label="Confirm", style=discord.ButtonStyle.green)
+    cancel = Button(label="Cancel", style=discord.ButtonStyle.red)
+    view = View()
+    view.add_item(confirm)
+    view.add_item(cancel)
+
+    async def button_callback(interaction):
+        member = interaction.user
+        if not member.id == ctx.author.id:
+            return
+        button1 = Button(
+            label="Confirm", style=discord.ButtonStyle.green, disabled=True)
+        button3 = Button(
+            label="Cancel", style=discord.ButtonStyle.gray, disabled=True)
+        view1 = View()
+        view1.add_item(button1)
+        view1.add_item(button3)
+        responce_get = await kick_user(ctx, user, reason=reason)
+        if responce_get == True:
+            confirm_kick = discord.Embed(
+                description=f"{user} *has beeen kicked by* `{ctx.author}`", color=discord.Color.green())
+            await interaction.response.edit_message(embed=confirm_kick, view=view1)
+        else:
+            pass
+
+    async def button2_callback(interaction):
+        member = interaction.user
+        if not member.id == ctx.author.id:
+            return
+        button1 = Button(
+            label="Confirm", style=discord.ButtonStyle.gray, disabled=True)
+        button3 = Button(
+            label="Cancel", style=discord.ButtonStyle.green, disabled=True)
+        view1 = View()
+        view1.add_item(button1)
+        view1.add_item(button3)
+        cancel_kick = discord.Embed(
+            description=f"Command has stopped.", color=discord.Color.green())
+        await interaction.response.edit_message(embed=cancel_kick, view=view1)
+    await ctx.respond(embed=kick_embed, view=view)
+    confirm.callback = button_callback
+    cancel.callback = button2_callback
+
+
+@client.slash_command(description="Ban a member from the server")
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, user: discord.Option(discord.Member, description="Please select a user to ban", required=True), reason: discord.Option(str, description="Why do you want to ban?", required=False)):
+    if user.id == ctx.author.id:
+        await ctx.respond(embed=discord.Embed(description=f"*You can't ban yourself*", color=discord.Color.red()))
+        return
+    ban_embed = discord.Embed(
+        description=f"*Please confirm to ban {user}*", color=discord.Color.blurple())
+    confirm = Button(label="Confirm", style=discord.ButtonStyle.green)
+    cancel = Button(label="Cancel", style=discord.ButtonStyle.red)
+    view = View()
+    view.add_item(confirm)
+    view.add_item(cancel)
+
+    async def button_callback(interaction):
+        member = interaction.user
+        if not member.id == ctx.author.id:
+            return
+        button1 = Button(
+            label="Confirm", style=discord.ButtonStyle.green, disabled=True)
+        button3 = Button(
+            label="Cancel", style=discord.ButtonStyle.gray, disabled=True)
+        view1 = View()
+        view1.add_item(button1)
+        view1.add_item(button3)
+        responce_get = await ban_user(ctx, user, reason=reason)
+        if responce_get == True:
+            confirm_ban = discord.Embed(
+                description=f"{user} *has beeen banned by* `{ctx.author}`", color=discord.Color.green())
+            await interaction.response.edit_message(embed=confirm_ban, view=view1)
+        else:
+            pass
+
+    async def button2_callback(interaction):
+        member = interaction.user
+        if not member.id == ctx.author.id:
+            return
+        button1 = Button(
+            label="Confirm", style=discord.ButtonStyle.gray, disabled=True)
+        button3 = Button(
+            label="Cancel", style=discord.ButtonStyle.green, disabled=True)
+        view1 = View()
+        view1.add_item(button1)
+        view1.add_item(button3)
+        cancel_ban = discord.Embed(
+            description=f"Command has stopped.", color=discord.Color.green())
+        await interaction.response.edit_message(embed=cancel_ban, view=view1)
+    await ctx.respond(embed=ban_embed, view=view)
+    confirm.callback = button_callback
+    cancel.callback = button2_callback
 
 
 @client.slash_command(name="invite", description="Invite CB42 to your server")
@@ -630,18 +753,6 @@ async def password(ctx):
     author = ctx.author
     await ctx.respond("Check your DM's‼", ephemeral=True)
     await ctx.author.send(f"Your secret password is: `{am}`")
-
-
-@client.slash_command(name="ban", description="Ban a member")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.has_permissions(ban_members=True)
-async def ban(ctx, member: discord.Member = None, *, reason=None):
-    if member == None:
-        await ctx.respond("Mention the member to be banned!", ephemeral=True)
-    if reason == None:
-        reason = "None"
-    await member.ban(reason=reason)
-    await ctx.respond(f"Successfully banned {member.mention}")
 
 
 @client.slash_command(name="unban", description="Unban a member using their USER-ID")
