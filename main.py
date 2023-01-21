@@ -1,19 +1,21 @@
-import os
 import asyncio
-from datetime import timedelta
 import datetime
+import os
+import random
 from datetime import *
-from dotenv import load_dotenv
+from datetime import timedelta
+
+import aiohttp
+import certifi
 import discord
+import pymongo
 from discord import *
 from discord.ext import commands
 from discord.ext.commands import *
 from discord.ui import *
-import aiohttp
-import random
-import pymongo
-import certifi
+from dotenv import load_dotenv
 from pymongo import MongoClient
+
 from defs import *
 
 load_dotenv()
