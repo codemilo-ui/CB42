@@ -9,6 +9,7 @@ import aiohttp
 import certifi
 import discord
 import pymongo
+from bs4 import BeautifulSoup
 from discord import *
 from discord.ext import commands
 from discord.ext.commands import *
@@ -449,6 +450,24 @@ async def timeout_user(ctx, member, reason, timeouttime):
         return False
     return True
 
+@client.slash_command(name="google", description="Google something...")
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def google(ctx, *, query: str):
+    # Send a message to the channel to let the user know that the bot is working on their request
+    await ctx.send(f'Searching for "{query}"...')
+    
+    # Use the requests library to send a GET request to Google
+    response = requests.get(f'https://www.google.com/search?q={query}&tbm=isch')
+    
+    # Parse the HTML content of the response using BeautifulSoup
+    soup = BeautifulSoup(response.content, 'html.parser')
+    
+    # Find all image tags on the page
+    images = soup.find_all('img')
+    
+    # Iterate through the images and send the image URL to the channel
+    for i, image in enumerate(images[:5]):
+        await ctx.send(image['src'])
 
 @client.slash_command(description="mutes a member")
 @commands.has_permissions(kick_members=True)
@@ -559,10 +578,10 @@ async def meme(ctx):
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def website_status(ctx, url:str):
     try:
+        await ctx.defer()
         req = requests.get(url)
         await ctx.defer()
         if req.status_code == 200:
-            await ctx.defer()
             embed = discord.Embed(title="The website is running! ✅", description=f"`{url}` is up and running")
             await ctx.respond(embed=embed)
         else:

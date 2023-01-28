@@ -7,3 +7,4 @@ randfacts
 pymongo
 dnspython
 python-dotenv
+beautifulsoup4
