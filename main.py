@@ -127,7 +127,7 @@ class DropDownMenu(discord.ui.View):
             view = View()
             inembed = discord.Embed(
                 title="Information commands",
-                description="`invite`, `ping`, `credits`, `uptime`",
+                description="`invite`, `ping`, `credits`, `uptime`, `website-status`",
             )
 
             await interaction.response.send_message(embed=inembed, view=view, ephemeral=True)
@@ -555,6 +555,19 @@ async def meme(ctx):
 
             await ctx.respond(embed=embed)
 
+@client.slash_command(name="website-status", description="Check the status of a website")
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def website_status(ctx, url:str):
+    try:
+        req = requests.get(url)
+        if req.status_code == 200:
+            embed = discord.Embed(title="The website is running! ✅", description=f"`{url}` is up and running")
+            await ctx.respond(embed=embed)
+        else:
+            embed = discord.Embed(title="The website is running! ✅", description=f"`{url}` returned status code **{req.status_code}**")
+            await ctx.respond(embed=embed)
+    except:
+        await ctx.respond(f'Error occured while checking the status of {url}', ephemeral=True)
 
 @client.slash_command(name="membercount", description="Get the membercount of the specific server")
 @commands.cooldown(1, 5, commands.BucketType.user)
