@@ -28,6 +28,7 @@ cluster = MongoClient(mango_url, tlsCAFile=e)
 db = cluster["cb42"]
 coll = db["prefix"]
 collection = db["level"]
+wel = db["welcomeandleave"]
 
 
 def prefix(client, message):
@@ -62,6 +63,27 @@ async def status():
         await asyncio.sleep(10)
 
 
+def get_channel_id():
+    return wel.settings.find_one({"name": "welcome_channel"})["channel_id"]
+
+
+def update_channel_id(channel_id):
+    wel.settings.update_one({"name": "welcome_channel"}, {
+                            "$set": {"channel_id": channel_id}})
+
+
+async def send_welcome_message(member):
+    channel_id = get_channel_id()
+
+    channel = bot.get_channel(channel_id)
+
+    welcome_message = f"Welcome to the server, {member.mention}! We're glad to have you here!"
+    embed = discord.Embed(title=welcome_message, color=discord.Color.green())
+    embed.set_thumbnail(url=member.avatar_url)
+
+    await channel.send(embed=embed)
+
+
 @client.event
 async def on_guild_join(guild):
     coll.insert_one({"_id": guild.id, "prefix": "cb!"})
@@ -71,6 +93,17 @@ async def on_guild_join(guild):
 async def on_guild_remove(guild):
     coll.delete_one({"_id": guild.id})
 
+
+@bot.event
+async def on_member_join(member):
+    await send_welcome_message(member)
+
+
+@bot.event
+async def on_member_remove(member):
+    channel_id = get_channel_id()
+    channel = bot.get_channel(channel_id)
+    await channel.send(f"Goodbye, {member.name}! We'll miss you!")
 
 async def scam_check(message):
     with open('blocked_links.json', 'r') as f1:
@@ -93,6 +126,11 @@ async def setprefix(ctx, prefix=None):
                         "$set": {"prefix": prefix}}, upsert=True)
         await ctx.reply("**Prefix has been changed to:** `{}`".format(prefix))
 
+@bot.command()
+async def setchannel(ctx, channel: discord.TextChannel):
+    # Update the channel ID in the database
+    update_channel_id(channel.id)
+    await ctx.send(f"The designated channel has been set to {channel.mention}.")
 
 class DropDownMenu(discord.ui.View):
     @discord.ui.select(placeholder="Select a value", min_values=1, max_values=1, options=[
@@ -651,6 +689,14 @@ async def kick_user(ctx, member, reason):
 async def ban_user(ctx, member, reason):
     await member.ban(reason=reason)
     return True
+
+
+@client.slash_command(name="set-welcome-channel", description="Set the welcome channel")
+@commands.has_permissions(kick_members=True)
+async def setchannel(ctx, channel: discord.TextChannel):
+    # Update the channel ID in the database
+    update_channel_id(channel.id)
+    await ctx.respond(f"The designated channel has been set to {channel.mention}.")
 
 
 @client.slash_command(description="Kick a member from the server")
