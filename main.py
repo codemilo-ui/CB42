@@ -560,13 +560,17 @@ async def meme(ctx):
 async def website_status(ctx, url:str):
     try:
         req = requests.get(url)
+        await ctx.defer()
         if req.status_code == 200:
+            await ctx.defer()
             embed = discord.Embed(title="The website is running! ✅", description=f"`{url}` is up and running")
             await ctx.respond(embed=embed)
         else:
+            await ctx.defer()
             embed = discord.Embed(title="The website is running! ✅", description=f"`{url}` returned status code **{req.status_code}**")
             await ctx.respond(embed=embed)
     except:
+        await ctx.defer()
         await ctx.respond(f'Error occured while checking the status of {url}', ephemeral=True)
 
 @client.slash_command(name="membercount", description="Get the membercount of the specific server")
