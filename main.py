@@ -454,21 +454,17 @@ async def timeout_user(ctx, member, reason, timeouttime):
 @client.slash_command(name="google", description="Google something...")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def google(ctx, *, query: str):
-    await ctx.defer()
     await ctx.respond(f'Searching for "{query}"...')
     await ctx.defer()
     response = requests.get(f'https://www.google.com/search?q={query}')
-    await ctx.defer()
     soup = BeautifulSoup(response.content, 'html.parser')
     link = soup.find('a', {'class': 'BNeawe tAd8D AP7Wnd'}).get('href')
     text = soup.find('div', {'class': 'BNeawe iBp4i AP7Wnd'}).text
-    await ctx.defer()
     embed = discord.Embed(title=query, description=text, color=0x00ff00)
     embed.set_author(name='Google Search', url=link)
     embed.set_footer(text='powered by google')
     await ctx.respond(embed=embed)
     images = soup.find_all('img')
-    await ctx.defer()
     for i, image in enumerate(images[:5]):
         await ctx.respond(image['src'])
 
