@@ -75,7 +75,7 @@ def update_channel_id(channel_id):
 async def send_welcome_message(member):
     channel_id = get_channel_id()
 
-    channel = bot.get_channel(channel_id)
+    channel = client.get_channel(channel_id)
 
     welcome_message = f"Welcome to the server, {member.mention}! We're glad to have you here!"
     embed = discord.Embed(title=welcome_message, color=discord.Color.green())
