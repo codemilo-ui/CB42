@@ -79,7 +79,6 @@ async def send_welcome_message(member):
 
     welcome_message = f"Welcome to the server, {member.mention}! We're glad to have you here!"
     embed = discord.Embed(title=welcome_message, color=discord.Color.green())
-    embed.set_thumbnail(url=member.avatar_url)
 
     await channel.send(embed=embed)
 
