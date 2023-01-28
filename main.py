@@ -64,11 +64,11 @@ async def status():
 
 
 def get_channel_id():
-    return wel.settings.find_one({"name": "welcome_channel"})["channel_id"]
+    return wel.find_one({"name": "welcome_channel"})["channel_id"]
 
 
 def update_channel_id(channel_id):
-    wel.settings.update_one({"name": "welcome_channel"}, {
+    wel.update_one({"name": "welcome_channel"}, {
                             "$set": {"channel_id": channel_id}})
 
 
