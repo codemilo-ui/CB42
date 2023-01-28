@@ -94,15 +94,15 @@ async def on_guild_remove(guild):
     coll.delete_one({"_id": guild.id})
 
 
-@bot.event
+@client.event
 async def on_member_join(member):
     await send_welcome_message(member)
 
 
-@bot.event
+@client.event
 async def on_member_remove(member):
     channel_id = get_channel_id()
-    channel = bot.get_channel(channel_id)
+    channel = client.get_channel(channel_id)
     await channel.send(f"Goodbye, {member.name}! We'll miss you!")
 
 async def scam_check(message):
@@ -126,7 +126,7 @@ async def setprefix(ctx, prefix=None):
                         "$set": {"prefix": prefix}}, upsert=True)
         await ctx.reply("**Prefix has been changed to:** `{}`".format(prefix))
 
-@bot.command()
+@client.command()
 async def setchannel(ctx, channel: discord.TextChannel):
     # Update the channel ID in the database
     update_channel_id(channel.id)
