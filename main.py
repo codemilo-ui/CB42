@@ -466,7 +466,7 @@ async def google(ctx, *, query: str):
     await ctx.respond(embed=embed)
     images = soup.find_all('img')
     for i, image in enumerate(images[:5]):
-        await ctx.respond(image['src'])
+        await ctx.followup.send(image['src'])
 
 
 @client.slash_command(description="mutes a member")
