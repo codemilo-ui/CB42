@@ -450,24 +450,24 @@ async def timeout_user(ctx, member, reason, timeouttime):
         return False
     return True
 
+
 @client.slash_command(name="google", description="Google something...")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def google(ctx, *, query: str):
-    # Send a message to the channel to let the user know that the bot is working on their request
-    await ctx.send(f'Searching for "{query}"...')
-    
-    # Use the requests library to send a GET request to Google
-    response = requests.get(f'https://www.google.com/search?q={query}&tbm=isch')
-    
-    # Parse the HTML content of the response using BeautifulSoup
+    await ctx.defer()
+    await ctx.respond(f'Searching for "{query}"...')
+    response = requests.get(f'https://www.google.com/search?q={query}')
     soup = BeautifulSoup(response.content, 'html.parser')
-    
-    # Find all image tags on the page
+    link = soup.find('a', {'class': 'BNeawe tAd8D AP7Wnd'}).get('href')
+    text = soup.find('div', {'class': 'BNeawe iBp4i AP7Wnd'}).text
+    embed = discord.Embed(title=query, description=text, color=0x00ff00)
+    embed.set_author(name='Google Search', url=link)
+    embed.set_footer(text='powered by google')
+    await ctx.respond(embed=embed)
     images = soup.find_all('img')
-    
-    # Iterate through the images and send the image URL to the channel
     for i, image in enumerate(images[:5]):
-        await ctx.send(image['src'])
+        await ctx.respond(image['src'])
+
 
 @client.slash_command(description="mutes a member")
 @commands.has_permissions(kick_members=True)
@@ -574,23 +574,27 @@ async def meme(ctx):
 
             await ctx.respond(embed=embed)
 
+
 @client.slash_command(name="website-status", description="Check the status of a website")
 @commands.cooldown(1, 5, commands.BucketType.user)
-async def website_status(ctx, url:str):
+async def website_status(ctx, url: str):
     try:
         await ctx.defer()
         req = requests.get(url)
         await ctx.defer()
         if req.status_code == 200:
-            embed = discord.Embed(title="The website is running! ✅", description=f"`{url}` is up and running")
+            embed = discord.Embed(
+                title="The website is running! ✅", description=f"`{url}` is up and running")
             await ctx.respond(embed=embed)
         else:
             await ctx.defer()
-            embed = discord.Embed(title="The website is running! ✅", description=f"`{url}` returned status code **{req.status_code}**")
+            embed = discord.Embed(title="The website is running! ✅",
+                                  description=f"`{url}` returned status code **{req.status_code}**")
             await ctx.respond(embed=embed)
     except:
         await ctx.defer()
         await ctx.respond(f'Error occured while checking the status of {url}', ephemeral=True)
+
 
 @client.slash_command(name="membercount", description="Get the membercount of the specific server")
 @commands.cooldown(1, 5, commands.BucketType.user)
