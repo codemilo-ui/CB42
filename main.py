@@ -128,8 +128,13 @@ async def setprefix(ctx, prefix=None):
 
 @client.command()
 async def setchannel(ctx, channel: discord.TextChannel):
-    # Update the channel ID in the database
-    update_channel_id(channel.id)
+    existing_channel = wel.settings.find_one({"name": "welcome_channel"})
+    if existing_channel is None:
+        # Insert a new document with the channel ID and name "welcome_channel"
+        wel.settings.insert_one({"name": "welcome_channel", "channel_id": channel.id})
+    else:
+        # Update the channel ID
+        wel.settings.update_one({"name": "welcome_channel"}, {"$set": {"channel_id": channel.id}})
     await ctx.send(f"The designated channel has been set to {channel.mention}.")
 
 class DropDownMenu(discord.ui.View):
@@ -694,8 +699,13 @@ async def ban_user(ctx, member, reason):
 @client.slash_command(name="set-welcome-channel", description="Set the welcome channel")
 @commands.has_permissions(kick_members=True)
 async def setchannel(ctx, channel: discord.TextChannel):
-    # Update the channel ID in the database
-    update_channel_id(channel.id)
+    existing_channel = wel.settings.find_one({"name": "welcome_channel"})
+    if existing_channel is None:
+        # Insert a new document with the channel ID and name "welcome_channel"
+        wel.settings.insert_one({"name": "welcome_channel", "channel_id": channel.id})
+    else:
+        # Update the channel ID
+        wel.settings.update_one({"name": "welcome_channel"}, {"$set": {"channel_id": channel.id}})
     await ctx.respond(f"The designated channel has been set to {channel.mention}.")
 
 
