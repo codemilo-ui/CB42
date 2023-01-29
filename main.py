@@ -29,6 +29,7 @@ db = cluster["cb42"]
 coll = db["prefix"]
 collection = db["level"]
 wel = db["welcomeandleave"]
+lev = db["welcomeandleave"]
 
 
 def prefix(client, message):
@@ -63,25 +64,41 @@ async def status():
         await asyncio.sleep(10)
 
 
-def get_channel_id():
+def get_welcome_channel_id():
     return wel.settings.find_one({"name": "welcome_channel"})["channel_id"]
 
+def get_leave_channel_id():
+    return lev.settings.find_one({"name": "leave_channel"})["channel_id"]
 
-def update_channel_id(channel_id):
+
+def update_welcome_channel_id(channel_id):
     wel.settings.update_one({"name": "welcome_channel"}, {
+                            "$set": {"channel_id": channel_id}})
+
+def update_leave_channel_id(channel_id):
+    lev.settings.update_one({"name": "leave_channel"}, {
                             "$set": {"channel_id": channel_id}})
 
 
 async def send_welcome_message(member):
-    channel_id = get_channel_id()
+    channel_id = get_welcome_channel_id()
 
     channel = client.get_channel(channel_id)
 
-    welcome_message = f"Welcome to the server, {member.mention}! We're glad to have you here!"
-    embed = discord.Embed(title=welcome_message, color=discord.Color.green())
+    welcome_message = f"Welcome to the server, {member.name}! We're glad to have you here!"
+    embed = discord.Embed(title=welcome_message)
 
     await channel.send(embed=embed)
 
+async def send_leave_message(member):
+    channel_id = get_leave_channel_id()
+
+    channel = client.get_channel(channel_id)
+
+    welcome_message = f"Welcome to the server, {member.name}! We're glad to have you here!"
+    embed = discord.Embed(title=welcome_message)
+
+    await channel.send(embed=embed)
 
 @client.event
 async def on_guild_join(guild):
@@ -100,9 +117,7 @@ async def on_member_join(member):
 
 @client.event
 async def on_member_remove(member):
-    channel_id = get_channel_id()
-    channel = client.get_channel(channel_id)
-    await channel.send(f"Goodbye, {member.name}! We'll miss you!")
+    await send_leave_message(member)
 
 async def scam_check(message):
     with open('blocked_links.json', 'r') as f1:
@@ -126,7 +141,7 @@ async def setprefix(ctx, prefix=None):
         await ctx.reply("**Prefix has been changed to:** `{}`".format(prefix))
 
 @client.command()
-async def setchannel(ctx, channel: discord.TextChannel):
+async def setwelcomechannel(ctx, channel: discord.TextChannel):
     existing_channel = wel.settings.find_one({"name": "welcome_channel"})
     if existing_channel is None:
         # Insert a new document with the channel ID and name "welcome_channel"
@@ -134,6 +149,15 @@ async def setchannel(ctx, channel: discord.TextChannel):
     else:
         # Update the channel ID
         wel.settings.update_one({"name": "welcome_channel"}, {"$set": {"channel_id": channel.id}})
+    await ctx.send(f"The designated channel has been set to {channel.mention}.")
+
+@client.command()
+async def setleavechannel(ctx, channel: discord.TextChannel):
+    existing_channel = lev.settings.find_one({"name": "leave_channel"})
+    if existing_channel is None:
+        lev.settings.insert_one({"name": "leave_channel", "channel_id": channel.id})
+    else:
+        lev.settings.update_one({"name": "leave_channel"}, {"$set": {"channel_id": channel.id}})
     await ctx.send(f"The designated channel has been set to {channel.mention}.")
 
 class DropDownMenu(discord.ui.View):
@@ -707,6 +731,15 @@ async def setchannel(ctx, channel: discord.TextChannel):
         wel.settings.update_one({"name": "welcome_channel"}, {"$set": {"channel_id": channel.id}})
     await ctx.respond(f"The designated channel has been set to {channel.mention}.")
 
+@client.slash_command(name="set-leave-channel", description="Set the leave channel")
+@commands.has_permissions(kick_members=True)
+async def setleavechannel(ctx, channel: discord.TextChannel):
+    existing_channel = lev.settings.find_one({"name": "leave_channel"})
+    if existing_channel is None:
+        lev.settings.insert_one({"name": "leave_channel", "channel_id": channel.id})
+    else:
+        lev.settings.update_one({"name": "leave_channel"}, {"$set": {"channel_id": channel.id}})
+    await ctx.respond(f"The designated channel has been set to {channel.mention}.")
 
 @client.slash_command(description="Kick a member from the server")
 @commands.has_permissions(kick_members=True)
