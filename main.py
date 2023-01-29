@@ -32,7 +32,7 @@ coll = db["prefix"]
 collection = db["level"]
 wel = db["welcomeandleave"]
 lev = db["welcomeandleave"]
-settings = db["verify"]
+ver = db["verify"]
 
 
 def prefix(client, message):
@@ -67,11 +67,11 @@ async def status():
         await asyncio.sleep(10)
 
 def get_verify_role_id():
-    return settings.settings.find_one({"name": "verify_role"})["role_id"]
+    return ver.settings.find_one({"name": "verify_role"})["role_id"]
 
 # Update the verify role ID in the database
 def update_verify_role_id(role_id):
-    settings.settings.update_one({"name": "verify_role"}, {"$set": {"role_id": role_id}})
+    ver.settings.update_one({"name": "verify_role"}, {"$set": {"role_id": role_id}})
 
 def get_welcome_channel_id():
     return wel.settings.find_one({"name": "welcome_channel"})["channel_id"]
@@ -99,7 +99,7 @@ async def send_welcome_message(member):
     channel = client.get_channel(channel_id)
     
     # Create the custom welcome image
-    avatar_url = member.avatar_url
+    avatar_url = member.avatar.url
     response = requests.get(avatar_url)
     img = Image.open(io.BytesIO(response.content))
     img = img.resize((1100, 500), Image.ANTIALIAS)
@@ -178,7 +178,7 @@ async def setverifyrole(ctx, role: discord.Role):
         await ctx.send(f"The designated verify role has been set to {role.name}.")
     else:
         # Insert the verify role into the database
-        settings.insert_one({"name": "verify_role", "role_id": role.id})
+        ver.insert_one({"name": "verify_role", "role_id": role.id})
         await ctx.send(f"The designated verify role has been set to {role.name}.")
 
 @client.command(aliases=['prefix'])
