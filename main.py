@@ -160,7 +160,7 @@ async def scam_check(message):
             await message.delete()
             await message.channel.send("You can't send this link! ❌", delete_after=3)
 
-@bot.command()
+@client.command()
 async def verify(ctx):
     # Get the verify role ID
     verify_role_id = get_verify_role_id()
@@ -169,11 +169,17 @@ async def verify(ctx):
     await ctx.author.add_roles(role)
     await ctx.send(f"{ctx.author.mention} has been verified!")
 
-@bot.command()
+@client.command()
 async def setverifyrole(ctx, role: discord.Role):
-    # Update the verify role ID in the database
-    update_verify_role_id(role.id)
-    await ctx.send(f"The designated role for verification has been set to {role.name}.")
+    # Check if the role exists
+    if role in ctx.guild.roles:
+        # Update the verify role ID in the database
+        update_verify_role_id(role.id)
+        await ctx.send(f"The designated verify role has been set to {role.name}.")
+    else:
+        # Insert the verify role into the database
+        settings.insert_one({"name": "verify_role", "role_id": role.id})
+        await ctx.send(f"The designated verify role has been set to {role.name}.")
 
 @client.command(aliases=['prefix'])
 @commands.has_permissions(manage_guild=True)
