@@ -95,7 +95,7 @@ async def send_welcome_message(member):
     avatar_url = member.avatar.url
     response = requests.get(avatar_url)
     img = Image.open(io.BytesIO(response.content))
-    img = img.resize((128, 128), Image.ANTIALIAS)
+    img = img.resize((1100, 500), Image.ANTIALIAS)
 
     font_type = ImageFont.truetype("arial.ttf", 40)
     font_type_small = ImageFont.truetype("arial.ttf", 20)
