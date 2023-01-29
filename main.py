@@ -89,10 +89,10 @@ async def send_welcome_message(member):
     channel_id = get_welcome_channel_id()
     
     # Get the channel
-    channel = bot.get_channel(channel_id)
+    channel = client.get_channel(channel_id)
     
     # Create the custom welcome image
-    avatar_url = member.avatar_url
+    avatar_url = member.avatar.url
     response = requests.get(avatar_url)
     img = Image.open(io.BytesIO(response.content))
     img = img.resize((128, 128), Image.ANTIALIAS)
