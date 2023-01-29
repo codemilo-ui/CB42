@@ -16,7 +16,9 @@ from discord.ext.commands import *
 from discord.ui import *
 from dotenv import load_dotenv
 from pymongo import MongoClient
-
+from PIL import Image, ImageDraw, ImageFont
+import io
+from io import *
 from defs import *
 
 load_dotenv()
@@ -67,6 +69,7 @@ async def status():
 def get_welcome_channel_id():
     return wel.settings.find_one({"name": "welcome_channel"})["channel_id"]
 
+
 def get_leave_channel_id():
     return lev.settings.find_one({"name": "leave_channel"})["channel_id"]
 
@@ -75,30 +78,51 @@ def update_welcome_channel_id(channel_id):
     wel.settings.update_one({"name": "welcome_channel"}, {
                             "$set": {"channel_id": channel_id}})
 
+
 def update_leave_channel_id(channel_id):
     lev.settings.update_one({"name": "leave_channel"}, {
                             "$set": {"channel_id": channel_id}})
 
 
 async def send_welcome_message(member):
+    # Get the channel ID
     channel_id = get_welcome_channel_id()
+    
+    # Get the channel
+    channel = bot.get_channel(channel_id)
+    
+    # Create the custom welcome image
+    avatar_url = member.avatar_url
+    response = requests.get(avatar_url)
+    img = Image.open(io.BytesIO(response.content))
+    img = img.resize((128, 128), Image.ANTIALIAS)
 
-    channel = client.get_channel(channel_id)
+    font_type = ImageFont.truetype("arial.ttf", 40)
+    font_type_small = ImageFont.truetype("arial.ttf", 20)
+    draw = ImageDraw.Draw(img)
+    draw.text((0, 0), f"Welcome {member.name}#{member.discriminator}", font=font_type, fill=(255, 255, 255))
+    draw.text((0, 70), "to the server!", font=font_type_small, fill=(255, 255, 255))
 
-    welcome_message = f"Welcome to the server, {member.name}! We're glad to have you here!"
-    embed = discord.Embed(title=welcome_message)
+    img_io = io.BytesIO()
+    img_io.name = "welcome.png"
+    img.save(img_io, "PNG")
+    img_io.seek(0)
 
-    await channel.send(embed=embed)
+    # Send the welcome message
+    file = discord.File(img_io, filename="welcome.png")
+    await channel.send(file=file)
+
 
 async def send_leave_message(member):
     channel_id = get_leave_channel_id()
 
     channel = client.get_channel(channel_id)
 
-    welcome_message = f"Welcome to the server, {member.name}! We're glad to have you here!"
+    welcome_message = f"{member.name} has just left the server!"
     embed = discord.Embed(title=welcome_message)
 
     await channel.send(embed=embed)
+
 
 @client.event
 async def on_guild_join(guild):
@@ -118,6 +142,7 @@ async def on_member_join(member):
 @client.event
 async def on_member_remove(member):
     await send_leave_message(member)
+
 
 async def scam_check(message):
     with open('blocked_links.json', 'r') as f1:
@@ -140,25 +165,32 @@ async def setprefix(ctx, prefix=None):
                         "$set": {"prefix": prefix}}, upsert=True)
         await ctx.reply("**Prefix has been changed to:** `{}`".format(prefix))
 
+
 @client.command()
 async def setwelcomechannel(ctx, channel: discord.TextChannel):
     existing_channel = wel.settings.find_one({"name": "welcome_channel"})
     if existing_channel is None:
         # Insert a new document with the channel ID and name "welcome_channel"
-        wel.settings.insert_one({"name": "welcome_channel", "channel_id": channel.id})
+        wel.settings.insert_one(
+            {"name": "welcome_channel", "channel_id": channel.id})
     else:
         # Update the channel ID
-        wel.settings.update_one({"name": "welcome_channel"}, {"$set": {"channel_id": channel.id}})
+        wel.settings.update_one({"name": "welcome_channel"}, {
+                                "$set": {"channel_id": channel.id}})
     await ctx.send(f"The designated channel has been set to {channel.mention}.")
+
 
 @client.command()
 async def setleavechannel(ctx, channel: discord.TextChannel):
     existing_channel = lev.settings.find_one({"name": "leave_channel"})
     if existing_channel is None:
-        lev.settings.insert_one({"name": "leave_channel", "channel_id": channel.id})
+        lev.settings.insert_one(
+            {"name": "leave_channel", "channel_id": channel.id})
     else:
-        lev.settings.update_one({"name": "leave_channel"}, {"$set": {"channel_id": channel.id}})
+        lev.settings.update_one({"name": "leave_channel"}, {
+                                "$set": {"channel_id": channel.id}})
     await ctx.send(f"The designated channel has been set to {channel.mention}.")
+
 
 class DropDownMenu(discord.ui.View):
     @discord.ui.select(placeholder="Select a value", min_values=1, max_values=1, options=[
@@ -387,6 +419,17 @@ async def eightball(ctx, *, question):
         title=f"{question}", description=f"{random.choice(responses)}")
     await ctx.reply(embed=eightbembed)
 
+@client.command()
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def avatar(ctx, member: discord.Member = None):
+    if member == None:
+        member = ctx.author
+    ava = member.avatar.url
+    e = member.id
+    embed = discord.Embed(
+        title=f"Avatar of {member.name}#{member.discriminator}")
+    embed.set_image(url=ava)
+    await ctx.reply(embed=embed)
 
 @client.command()
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -725,21 +768,38 @@ async def setchannel(ctx, channel: discord.TextChannel):
     existing_channel = wel.settings.find_one({"name": "welcome_channel"})
     if existing_channel is None:
         # Insert a new document with the channel ID and name "welcome_channel"
-        wel.settings.insert_one({"name": "welcome_channel", "channel_id": channel.id})
+        wel.settings.insert_one(
+            {"name": "welcome_channel", "channel_id": channel.id})
     else:
         # Update the channel ID
-        wel.settings.update_one({"name": "welcome_channel"}, {"$set": {"channel_id": channel.id}})
+        wel.settings.update_one({"name": "welcome_channel"}, {
+                                "$set": {"channel_id": channel.id}})
     await ctx.respond(f"The designated channel has been set to {channel.mention}.")
+
 
 @client.slash_command(name="set-leave-channel", description="Set the leave channel")
 @commands.has_permissions(kick_members=True)
 async def setleavechannel(ctx, channel: discord.TextChannel):
     existing_channel = lev.settings.find_one({"name": "leave_channel"})
     if existing_channel is None:
-        lev.settings.insert_one({"name": "leave_channel", "channel_id": channel.id})
+        lev.settings.insert_one(
+            {"name": "leave_channel", "channel_id": channel.id})
     else:
-        lev.settings.update_one({"name": "leave_channel"}, {"$set": {"channel_id": channel.id}})
+        lev.settings.update_one({"name": "leave_channel"}, {
+                                "$set": {"channel_id": channel.id}})
     await ctx.respond(f"The designated channel has been set to {channel.mention}.")
+
+@client.slash_command(name="avatar", description="Shows the profile pic of a member")
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def avatar(ctx, member: discord.Member = None):
+    if member == None:
+        member = ctx.author
+    ava = member.avatar.url
+    e = member.id
+    embed = discord.Embed(
+        title=f"Avatar of {member.name}#{member.discriminator}")
+    embed.set_image(url=ava)
+    await ctx.respond(embed=embed, ephemeral=True)
 
 @client.slash_command(description="Kick a member from the server")
 @commands.has_permissions(kick_members=True)

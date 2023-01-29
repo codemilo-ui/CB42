@@ -8,3 +8,4 @@ pymongo
 dnspython
 python-dotenv
 beautifulsoup4
+Pillow
