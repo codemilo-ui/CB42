@@ -32,6 +32,7 @@ coll = db["prefix"]
 collection = db["level"]
 wel = db["welcomeandleave"]
 lev = db["welcomeandleave"]
+settings = db["verify"]
 
 
 def prefix(client, message):
@@ -65,6 +66,12 @@ async def status():
 
         await asyncio.sleep(10)
 
+def get_verify_role_id():
+    return settings.settings.find_one({"name": "verify_role"})["role_id"]
+
+# Update the verify role ID in the database
+def update_verify_role_id(role_id):
+    settings.settings.update_one({"name": "verify_role"}, {"$set": {"role_id": role_id}})
 
 def get_welcome_channel_id():
     return wel.settings.find_one({"name": "welcome_channel"})["channel_id"]
@@ -92,7 +99,7 @@ async def send_welcome_message(member):
     channel = client.get_channel(channel_id)
     
     # Create the custom welcome image
-    avatar_url = member.avatar.url
+    avatar_url = member.avatar_url
     response = requests.get(avatar_url)
     img = Image.open(io.BytesIO(response.content))
     img = img.resize((1100, 500), Image.ANTIALIAS)
@@ -153,6 +160,20 @@ async def scam_check(message):
             await message.delete()
             await message.channel.send("You can't send this link! ❌", delete_after=3)
 
+@bot.command()
+async def verify(ctx):
+    # Get the verify role ID
+    verify_role_id = get_verify_role_id()
+    role = discord.utils.get(ctx.guild.roles, id=verify_role_id)
+    # Add the role to the member
+    await ctx.author.add_roles(role)
+    await ctx.send(f"{ctx.author.mention} has been verified!")
+
+@bot.command()
+async def setverifyrole(ctx, role: discord.Role):
+    # Update the verify role ID in the database
+    update_verify_role_id(role.id)
+    await ctx.send(f"The designated role for verification has been set to {role.name}.")
 
 @client.command(aliases=['prefix'])
 @commands.has_permissions(manage_guild=True)

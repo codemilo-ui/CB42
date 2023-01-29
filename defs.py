@@ -75,8 +75,7 @@ all = lower + upper + num + symbols
 temp = random.sample(all,length)
 
 am = "".join(temp)
-
-
+                           
 bad_words = [
   "2 girls 1 cup",
   "2g1c",
