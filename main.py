@@ -1027,8 +1027,6 @@ async def rank(ctx):
     font = ImageFont.truetype("arial.ttf", 36)
     draw.text((10, 10), f"Level: {level}", font=font, fill=(255, 255, 255))
     draw.text((10, 70), f"XP: {xp}", font=font, fill=(255, 255, 255))
-    # Add a bar to show the level progress
-    draw.rectangle([(10, 120), (10 + level * 30, 140)], fill=(114, 137, 218))
     # Add a bar to show the XP progress
     draw.rectangle([(10, 170), (10 + xp * 0.3, 190)], fill=(247, 134, 28))
 
