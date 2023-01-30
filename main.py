@@ -1014,27 +1014,36 @@ async def slowmode(ctx, seconds: Option(int, required=True)):
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def rank(ctx):
     author_id = ctx.author.id
-    guild_id = ctx.guild.id
-    user_data = collection.find_one({"_id": author_id, "GuildID": guild_id})
-    if user_data is None:
-        return await ctx.respond("You have not been registered in this server.")
-    level = user_data["Level"]
-    xp = user_data["XP"]
-    
+    level = collection.find_one({"_id": author_id})["Level"]
+    xp = collection.find_one({"_id": author_id})["XP"]
+
+    # Get the user's avatar
+    ava = ctx.author.avatar.url
+    ava_response = requests.get(ava)
+    ava_img = Image.open(BytesIO(ava_response.content))
+
+    # Resize the avatar
+    size = 128, 128
+    ava_img.thumbnail(size)
+
     # Create an image
     img = Image.new("RGB", (400, 200), color=(73, 80, 87))
     draw = ImageDraw.Draw(img)
     font = ImageFont.truetype("arial.ttf", 36)
     draw.text((10, 10), f"Level: {level}", font=font, fill=(255, 255, 255))
-    draw.text((10, 70), f"XP: {xp}", font=font, fill=(255, 255, 255))
+    draw.text((10, 150), "XP", font=font, fill=(255, 255, 255))
     # Add a bar to show the XP progress
-    draw.rectangle([(10, 170), (10 + xp * 0.3, 190)], fill=(247, 134, 28))
+    draw.rectangle([(10, 170), (10 + xp * 3, 190)], fill=(114, 137, 218))
+
+    # Add the avatar to the center of the image
+    img.paste(ava_img, (img.width // 2 - ava_img.width // 2, img.height // 2 - ava_img.height // 2))
 
     # Save the image to a file
     img.save("rank.png")
     # Send the image in the Discord channel
     with open("rank.png", "rb") as f:
         await ctx.respond(file=discord.File(f))
+
 
 
 
