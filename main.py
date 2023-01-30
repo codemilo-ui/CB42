@@ -66,12 +66,17 @@ async def status():
 
         await asyncio.sleep(10)
 
+
 def get_verify_role_id(server_id):
     return ver.settings.find_one({"name": "verify_role", "server_id": server_id})["role_id"]
 
 # Update the verify role ID in the database
+
+
 def update_verify_role_id(server_id, role_id):
-    ver.settings.update_one({"name": "verify_role", "server_id": server_id}, {"$set": {"role_id": role_id}})
+    ver.settings.update_one({"name": "verify_role", "server_id": server_id}, {
+                            "$set": {"role_id": role_id}})
+
 
 def get_welcome_channel_id():
     return wel.settings.find_one({"name": "welcome_channel"})["channel_id"]
@@ -94,15 +99,15 @@ def update_leave_channel_id(channel_id):
 async def send_welcome_message(member):
     # Get the channel ID
     channel_id = get_welcome_channel_id()
-    
+
     # Get the channel
     channel = client.get_channel(channel_id)
-    
+
     # Create the welcome message
     welcome_message = f"Welcome to the server, {member.mention}! We're glad to have you here!"
-    embed = discord.Embed(title = welcome_message)
-    embed.set_thumbnail(url= member.avatar.url)
-    
+    embed = discord.Embed(title=welcome_message)
+    embed.set_thumbnail(url=member.avatar.url)
+
     # Send the welcome message
     await channel.send(embed=embed)
 
@@ -147,6 +152,7 @@ async def scam_check(message):
             await message.delete()
             await message.channel.send("You can't send this link! ❌", delete_after=3)
 
+
 @client.command()
 async def verify(ctx):
     member = ctx.author
@@ -161,6 +167,7 @@ async def verify(ctx):
     await member.edit(roles=role)
     await ctx.send(f"{ctx.author.mention} has been verified!")
 
+
 @client.command()
 async def setverifyrole(ctx, role: discord.Role):
     # Check if the role exists
@@ -170,7 +177,8 @@ async def setverifyrole(ctx, role: discord.Role):
         await ctx.send(f"The designated verify role has been set to {role.name}.")
     else:
         # Insert the verify role into the database
-        ver.settings.insert_one({"name": "verify_role", "server_id": ctx.guild.id, "role_id": role.id})
+        ver.settings.insert_one(
+            {"name": "verify_role", "server_id": ctx.guild.id, "role_id": role.id})
         await ctx.send(f"The designated verify role has been set to {role.name}.")
 
 
@@ -439,6 +447,7 @@ async def eightball(ctx, *, question):
         title=f"{question}", description=f"{random.choice(responses)}")
     await ctx.reply(embed=eightbembed)
 
+
 @client.command()
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def avatar(ctx, member: discord.Member = None):
@@ -450,6 +459,7 @@ async def avatar(ctx, member: discord.Member = None):
         title=f"Avatar of {member.name}#{member.discriminator}")
     embed.set_image(url=ava)
     await ctx.reply(embed=embed)
+
 
 @client.command()
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -809,6 +819,7 @@ async def setleavechannel(ctx, channel: discord.TextChannel):
                                 "$set": {"channel_id": channel.id}})
     await ctx.respond(f"The designated channel has been set to {channel.mention}.")
 
+
 @client.slash_command(name="avatar", description="Shows the profile pic of a member")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def avatar(ctx, member: discord.Member = None):
@@ -820,6 +831,7 @@ async def avatar(ctx, member: discord.Member = None):
         title=f"Avatar of {member.name}#{member.discriminator}")
     embed.set_image(url=ava)
     await ctx.respond(embed=embed, ephemeral=True)
+
 
 @client.slash_command(description="Kick a member from the server")
 @commands.has_permissions(kick_members=True)
@@ -1013,21 +1025,24 @@ async def slowmode(ctx, seconds: Option(int, required=True)):
 @client.slash_command(name="rank", description="Shows the rank of a user")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def rank(ctx):
+    guild_id = ctx.guild.id
     author_id = ctx.author.id
-    level = collection.find_one({"_id": author_id})["Level"]
-    xp = collection.find_one({"_id": author_id})["XP"]
+    level = collection.find_one(
+        {"GuildID": guild_id, "_id": author_id})["Level"]
+    xp = collection.find_one({"GuildID": guild_id, "_id": author_id})["XP"]
 
-    # Get the user's avatar
-    ava = ctx.author.avatar.url
-    ava_response = requests.get(ava)
-    ava_img = Image.open(BytesIO(ava_response.content))
+    if level is None:
+        await ctx.respond("You did not level in this server yet!")
 
-    # Resize the avatar
-    size = 128, 128
-    ava_img.thumbnail(size)
+    # Get the user's avatasr
+    ava = ctx.author.avatar_url
+    response = requests.get(ava)
+    imge = Image.open(BytesIO(response.content))
+    imge = imge.resize((100, 100))
 
     # Create an image
     img = Image.new("RGB", (400, 200), color=(73, 80, 87))
+    img.paste(img, (10, 10))
     draw = ImageDraw.Draw(img)
     font = ImageFont.truetype("arial.ttf", 36)
     draw.text((10, 10), f"Level: {level}", font=font, fill=(255, 255, 255))
@@ -1035,15 +1050,11 @@ async def rank(ctx):
     # Add a bar to show the XP progress
     draw.rectangle([(10, 170), (10 + xp * 0.3, 190)], fill=(247, 134, 28))
 
-    # Add the avatar to the center of the image
-    img.paste(ava_img, (img.width // 2 - ava_img.width // 2, img.height // 2 - ava_img.height // 2))
-
     # Save the image to a file
     img.save("rank.png")
     # Send the image in the Discord channel
     with open("rank.png", "rb") as f:
         await ctx.respond(file=discord.File(f))
-
 
 
 @client.slash_command(name="eightball", description="Ask some questions!")
