@@ -158,7 +158,7 @@ async def verify(ctx):
     member = ctx.author
     # Get the verify role ID
     verify_role_id = get_verify_role_id(ctx.guild.id)
-    role = discord.utils.get(ctx.guild.roles, id=verify_role_id)
+    role = guild.get_role(verify_role_id)
     # Check if the verify role has been set
     if role is None:
         await ctx.send("No verify role has been set.")
