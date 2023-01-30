@@ -149,6 +149,7 @@ async def scam_check(message):
 
 @client.command()
 async def verify(ctx):
+    member = ctx.author
     # Get the verify role ID
     verify_role_id = get_verify_role_id(ctx.guild.id)
     role = discord.utils.get(ctx.guild.roles, id=verify_role_id)
@@ -157,7 +158,7 @@ async def verify(ctx):
         await ctx.send("No verify role has been set.")
         return
     # Add the role to the member
-    await ctx.author.add_roles(role)
+    await member.edit(roles=role)
     await ctx.send(f"{ctx.author.mention} has been verified!")
 
 @client.command()
