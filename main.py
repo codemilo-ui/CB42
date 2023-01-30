@@ -1031,9 +1031,9 @@ async def rank(ctx):
     draw = ImageDraw.Draw(img)
     font = ImageFont.truetype("arial.ttf", 36)
     draw.text((10, 10), f"Level: {level}", font=font, fill=(255, 255, 255))
-    draw.text((10, 150), "XP", font=font, fill=(255, 255, 255))
+    draw.text((10, 130), "XP", font=font, fill=(255, 255, 255))
     # Add a bar to show the XP progress
-    draw.rectangle([(10, 170), (10 + xp * 3, 190)], fill=(114, 137, 218))
+    draw.rectangle([(10, 170), (10 + xp * 0.3, 190)], fill=(247, 134, 28))
 
     # Add the avatar to the center of the image
     img.paste(ava_img, (img.width // 2 - ava_img.width // 2, img.height // 2 - ava_img.height // 2))
@@ -1043,7 +1043,6 @@ async def rank(ctx):
     # Send the image in the Discord channel
     with open("rank.png", "rb") as f:
         await ctx.respond(file=discord.File(f))
-
 
 
 
