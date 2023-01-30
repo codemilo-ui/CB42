@@ -1124,7 +1124,7 @@ async def on_message(message):
             warned_users.remove(message.author.id)
             await asyncio.sleep(TIMEOUT_DURATION)
             await message.channel.set_permissions(message.author, send_messages=True)
-            await message.author.send("Your time out is over.")
+            await message.author.send("Your timeout is over.")
             timed_out_users.remove(message.author.id)
         else:
             await message.delete()
