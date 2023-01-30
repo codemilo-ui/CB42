@@ -158,13 +158,13 @@ async def verify(ctx):
     member = ctx.author
     # Get the verify role ID
     verify_role_id = get_verify_role_id(ctx.guild.id)
-    role = guild.get_role(verify_role_id)
+    role = ctx.guild.get_role(verify_role_id)
     # Check if the verify role has been set
     if role is None:
         await ctx.send("No verify role has been set.")
         return
     # Add the role to the member
-    await member.edit(roles=role)
+    await member.add_roles(role)
     await ctx.send(f"{ctx.author.mention} has been verified!")
 
 
