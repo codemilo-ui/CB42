@@ -1,4 +1,5 @@
 import asyncio
+from collections import defaultdict
 import datetime
 import os
 import random
@@ -33,7 +34,7 @@ collection = db["level"]
 wel = db["welcomeandleave"]
 lev = db["welcomeandleave"]
 ver = db["verify"]
-
+message_counts = defaultdict(int)
 
 def prefix(client, message):
     prefix = coll.find_one({"_id": message.guild.id})["prefix"]
@@ -1164,6 +1165,34 @@ async def on_message(message):
     message.content = message.content.lower()
     await client.process_commands(message)
     await scam_check(message)
+
+    author = message.author
+    # Don't check for spam in DMs or from the bot
+    if author == client.user or isinstance(message.channel, discord.DMChannel):
+        return
+
+    # Increment the user's message count
+    message_counts[author.id] += 1
+
+    # Check if the user has sent 3 messages in a row
+    if message_counts[author.id] >= 3:
+        # Time out the user for 5 minutes
+        timeout_duration = 5 * 60
+        await message.channel.set_permissions(author, send_messages=False)
+        await message.channel.send(f"{author.mention} was timed out for {timeout_duration} seconds for spamming.")
+        await asyncio.sleep(timeout_duration)
+        await message.channel.set_permissions(author, send_messages=True)
+        message_counts[author.id] = 0
+    elif message_counts[author.id] == 2:
+        # Send a warning message to the user
+        await message.channel.send(f"{author.mention}, please stop spamming or you will be timed out.")
+    else:
+        # Reset the user's message count after a minute
+        asyncio.ensure_future(reset_message_count(author.id))
+
+async def reset_message_count(author_id):
+    await asyncio.sleep(60)
+    message_counts[author_id] = 0
 try:
     client.loop.create_task(status())
     client.run(token_)
