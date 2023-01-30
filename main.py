@@ -71,7 +71,7 @@ def get_verify_role_id(server_id):
 
 # Update the verify role ID in the database
 def update_verify_role_id(server_id, role_id):
-    ver.settings.update_one({"name": "verify_role", "server_id": server_id}, {"$set": {"role_id": role_id}}, upsert=True)
+    ver.settings.update_one({"name": "verify_role", "server_id": server_id}, {"$set": {"role_id": role_id}})
 
 def get_welcome_channel_id():
     return wel.settings.find_one({"name": "welcome_channel"})["channel_id"]
@@ -149,33 +149,28 @@ async def scam_check(message):
 
 @client.command()
 async def verify(ctx):
-    # Get the server specific verify role ID
-    verify_role_id = ver.settings.find_one({"name": "verify_role", "server_id": ctx.guild.id})
-    if verify_role_id:
-        verify_role_id = verify_role_id["role_id"]
-        role = discord.utils.get(ctx.guild.roles, id=verify_role_id)
-        # Add the role to the member
-        await ctx.author.add_roles(role)
-        await ctx.send(f"{ctx.author.mention} has been verified!")
-    else:
-        await ctx.send("No verify role has been set for this server.")
-
+    # Get the verify role ID
+    verify_role_id = get_verify_role_id(ctx.guild.id)
+    role = discord.utils.get(ctx.guild.roles, id=verify_role_id)
+    # Check if the verify role has been set
+    if role is None:
+        await ctx.send("No verify role has been set.")
+        return
+    # Add the role to the member
+    await ctx.author.add_roles(role)
+    await ctx.send(f"{ctx.author.mention} has been verified!")
 
 @client.command()
 async def setverifyrole(ctx, role: discord.Role):
-    # Get the server ID
-    server_id = str(ctx.guild.id)
-    
-    # Check if the role exists in the database for the current server
-    result = ver.find_one({"server_id": server_id, "name": "verify_role"})
-    if result:
-        # Update the verify role ID in the database for the current server
-        ver.update_one({"server_id": server_id, "name": "verify_role"}, {"$set": {"role_id": role.id}})
-        await ctx.send(f"The designated verify role has been set to {role.name} for server {ctx.guild.name}.")
+    # Check if the role exists
+    if role in ctx.guild.roles:
+        # Update the verify role ID in the database
+        update_verify_role_id(ctx.guild.id, role.id)
+        await ctx.send(f"The designated verify role has been set to {role.name}.")
     else:
-        # Insert the verify role into the database for the current server
-        ver.insert_one({"server_id": server_id, "name": "verify_role", "role_id": role.id})
-        await ctx.send(f"The designated verify role has been set to {role.name} for server {ctx.guild.name}.")
+        # Insert the verify role into the database
+        ver.settings.insert_one({"name": "verify_role", "server_id": ctx.guild.id, "role_id": role.id})
+        await ctx.send(f"The designated verify role has been set to {role.name}.")
 
 
 @client.command(aliases=['prefix'])
