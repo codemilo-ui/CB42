@@ -33,8 +33,8 @@ coll = db["prefix"]
 collection = db["level"]
 wel = db["welcomeandleave"]
 lev = db["welcomeandleave"]
-ver = db["verify"]
-message_counts = defaultdict(int)
+message_count = {}
+
 
 def prefix(client, message):
     prefix = coll.find_one({"_id": message.guild.id})["prefix"]
@@ -68,17 +68,6 @@ async def status():
         await asyncio.sleep(10)
 
 
-def get_verify_role_id(server_id):
-    return ver.settings.find_one({"name": "verify_role", "server_id": server_id})["role_id"]
-
-# Update the verify role ID in the database
-
-
-def update_verify_role_id(server_id, role_id):
-    ver.settings.update_one({"name": "verify_role", "server_id": server_id}, {
-                            "$set": {"role_id": role_id}})
-
-
 def get_welcome_channel_id():
     return wel.settings.find_one({"name": "welcome_channel"})["channel_id"]
 
@@ -98,18 +87,14 @@ def update_leave_channel_id(channel_id):
 
 
 async def send_welcome_message(member):
-    # Get the channel ID
     channel_id = get_welcome_channel_id()
 
-    # Get the channel
     channel = client.get_channel(channel_id)
 
-    # Create the welcome message
     welcome_message = f"Welcome to the server, {member.mention}! We're glad to have you here!"
     embed = discord.Embed(title=welcome_message)
     embed.set_thumbnail(url=member.avatar.url)
 
-    # Send the welcome message
     await channel.send(embed=embed)
 
 
@@ -154,35 +139,6 @@ async def scam_check(message):
             await message.channel.send("You can't send this link! ❌", delete_after=3)
 
 
-@client.command()
-async def verify(ctx):
-    member = ctx.author
-    # Get the verify role ID
-    verify_role_id = get_verify_role_id(ctx.guild.id)
-    role = ctx.guild.get_role(verify_role_id)
-    # Check if the verify role has been set
-    if role is None:
-        await ctx.send("No verify role has been set.")
-        return
-    # Add the role to the member
-    await member.add_roles(role)
-    await ctx.send(f"{ctx.author.mention} has been verified!")
-
-
-@client.command()
-async def setverifyrole(ctx, role: discord.Role):
-    # Check if the role exists
-    if role in ctx.guild.roles:
-        # Update the verify role ID in the database
-        update_verify_role_id(ctx.guild.id, role.id)
-        await ctx.send(f"The designated verify role has been set to {role.name}.")
-    else:
-        # Insert the verify role into the database
-        ver.settings.insert_one(
-            {"name": "verify_role", "server_id": ctx.guild.id, "role_id": role.id})
-        await ctx.send(f"The designated verify role has been set to {role.name}.")
-
-
 @client.command(aliases=['prefix'])
 @commands.has_permissions(manage_guild=True)
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -199,11 +155,9 @@ async def setprefix(ctx, prefix=None):
 async def setwelcomechannel(ctx, channel: discord.TextChannel):
     existing_channel = wel.settings.find_one({"name": "welcome_channel"})
     if existing_channel is None:
-        # Insert a new document with the channel ID and name "welcome_channel"
         wel.settings.insert_one(
             {"name": "welcome_channel", "channel_id": channel.id})
     else:
-        # Update the channel ID
         wel.settings.update_one({"name": "welcome_channel"}, {
                                 "$set": {"channel_id": channel.id}})
     await ctx.send(f"The designated channel has been set to {channel.mention}.")
@@ -795,14 +749,12 @@ async def ban_user(ctx, member, reason):
 
 @client.slash_command(name="set-welcome-channel", description="Set the welcome channel")
 @commands.has_permissions(kick_members=True)
-async def setchannel(ctx, channel: discord.TextChannel):
+async def setwelcomechannel(ctx, channel: discord.TextChannel):
     existing_channel = wel.settings.find_one({"name": "welcome_channel"})
     if existing_channel is None:
-        # Insert a new document with the channel ID and name "welcome_channel"
         wel.settings.insert_one(
             {"name": "welcome_channel", "channel_id": channel.id})
     else:
-        # Update the channel ID
         wel.settings.update_one({"name": "welcome_channel"}, {
                                 "$set": {"channel_id": channel.id}})
     await ctx.respond(f"The designated channel has been set to {channel.mention}.")
@@ -1035,25 +987,19 @@ async def rank(ctx):
     if level is None:
         await ctx.respond("You did not level in this server yet!")
 
-    # Get the user's avatasr
     ava = ctx.author.avatar.url
     response = requests.get(ava)
     imge = Image.open(BytesIO(response.content))
     imge = imge.resize((100, 100))
-
-    # Create an image
     img = Image.new("RGB", (400, 200), color=(73, 80, 87))
     img.paste(imge, (390, 10))
     draw = ImageDraw.Draw(img)
     font = ImageFont.truetype("arial.ttf", 36)
     draw.text((10, 10), f"Level: {level}", font=font, fill=(255, 255, 255))
     draw.text((10, 130), "XP", font=font, fill=(255, 255, 255))
-    # Add a bar to show the XP progress
     draw.rectangle([(10, 170), (10 + xp * 0.3, 190)], fill=(247, 134, 28))
 
-    # Save the image to a file
     img.save("rank.png")
-    # Send the image in the Discord channel
     with open("rank.png", "rb") as f:
         await ctx.respond(file=discord.File(f))
 
@@ -1166,33 +1112,22 @@ async def on_message(message):
     await client.process_commands(message)
     await scam_check(message)
 
-    author = message.author
-    # Don't check for spam in DMs or from the bot
-    if author == client.user or isinstance(message.channel, discord.DMChannel):
-        return
-
-    # Increment the user's message count
-    message_counts[author.id] += 1
-
-    # Check if the user has sent 3 messages in a row
-    if message_counts[author.id] >= 3:
-        # Time out the user for 5 minutes
-        timeout_duration = 5 * 60
-        await message.channel.set_permissions(author, send_messages=False)
-        await message.channel.send(f"{author.mention} was timed out for {timeout_duration} seconds for spamming.")
-        await asyncio.sleep(timeout_duration)
-        await message.channel.set_permissions(author, send_messages=True)
-        message_counts[author.id] = 0
-    elif message_counts[author.id] == 2:
-        # Send a warning message to the user
-        await message.channel.send(f"{author.mention}, please stop spamming or you will be timed out.")
+    author_id = message.author.id
+    if author_id in message_count:
+        message_count[author_id] += 1
     else:
-        # Reset the user's message count after a minute
-        asyncio.ensure_future(reset_message_count(author.id))
+        message_count[author_id] = 1
 
-async def reset_message_count(author_id):
+    if message_count[author_id] > 3:
+        await message.channel.send(f"{message.author.mention} Please stop spamming.")
+        await message.channel.purge(limit=message_count[author_id] - 1)
+        await message.channel.set_permissions(message.author, send_messages=False)
+        await asyncio.sleep(30)
+        await message.channel.set_permissions(message.author, send_messages=True)
+        message_count[author_id] = 0
+
     await asyncio.sleep(60)
-    message_counts[author_id] = 0
+    message_count[author_id] = 0
 try:
     client.loop.create_task(status())
     client.run(token_)
