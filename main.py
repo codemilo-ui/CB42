@@ -1014,8 +1014,23 @@ async def slowmode(ctx, seconds: Option(int, required=True)):
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def rank(ctx):
     author_id = ctx.author.id
-    level = collection.find_one({"_id": author_id})["Level"]
-    await ctx.respond(f"**You are level:** `{level}`")
+    server_id = ctx.guild.id
+    data = collection.find_one({"_id": author_id, "GuildID": server_id})
+    if data is None:
+        await ctx.respond("You have not yet started ranking on this server.")
+        return
+
+    level = data["Level"]
+    xp = data["XP"]
+    max_xp = level * 100
+    xp_bar = (xp / max_xp) * 100
+
+    embed = discord.Embed(title=f"Rank for {ctx.author.name}", color=discord.Color.blue())
+    embed.add_field(name="Level", value=level)
+    embed.add_field(name="XP", value=f"{xp}/{max_xp}")
+    embed.add_field(name="XP Bar", value="=" * int(xp_bar / 10) + " " * (10 - int(xp_bar / 10)))
+    await ctx.respond(embed=embed)
+
 
 
 @client.slash_command(name="eightball", description="Ask some questions!")
