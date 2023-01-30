@@ -1042,7 +1042,7 @@ async def rank(ctx):
 
     # Create an image
     img = Image.new("RGB", (400, 200), color=(73, 80, 87))
-    img.paste(imge, (100, 10))
+    img.paste(imge, (390, 10))
     draw = ImageDraw.Draw(img)
     font = ImageFont.truetype("arial.ttf", 36)
     draw.text((10, 10), f"Level: {level}", font=font, fill=(255, 255, 255))
