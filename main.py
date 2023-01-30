@@ -1014,22 +1014,29 @@ async def slowmode(ctx, seconds: Option(int, required=True)):
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def rank(ctx):
     author_id = ctx.author.id
-    server_id = ctx.guild.id
-    data = collection.find_one({"_id": author_id, "GuildID": server_id})
-    if data is None:
-        await ctx.respond("You have not yet started ranking on this server.")
-        return
+    guild_id = ctx.guild.id
+    user_data = collection.find_one({"_id": author_id, "GuildID": guild_id})
+    if user_data is None:
+        return await ctx.respond("You have not been registered in this server.")
+    level = user_data["Level"]
+    xp = user_data["XP"]
+    
+    # Create an image
+    img = Image.new("RGB", (400, 200), color=(73, 80, 87))
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.truetype("arial.ttf", 36)
+    draw.text((10, 10), f"Level: {level}", font=font, fill=(255, 255, 255))
+    draw.text((10, 70), f"XP: {xp}", font=font, fill=(255, 255, 255))
+    # Add a bar to show the level progress
+    draw.rectangle([(10, 120), (10 + level * 30, 140)], fill=(114, 137, 218))
+    # Add a bar to show the XP progress
+    draw.rectangle([(10, 170), (10 + xp * 0.3, 190)], fill=(247, 134, 28))
 
-    level = data["Level"]
-    xp = data["XP"]
-    max_xp = level * 100
-    xp_bar = (xp / max_xp) * 100
-
-    embed = discord.Embed(title=f"Rank for {ctx.author.name}", color=discord.Color.blue())
-    embed.add_field(name="Level", value=level)
-    embed.add_field(name="XP", value=f"{xp}/{max_xp}")
-    embed.add_field(name="XP Bar", value="=" * int(xp_bar / 10) + " " * (10 - int(xp_bar / 10)))
-    await ctx.respond(embed=embed)
+    # Save the image to a file
+    img.save("rank.png")
+    # Send the image in the Discord channel
+    with open("rank.png", "rb") as f:
+        await ctx.respond(file=discord.File(f))
 
 
 
