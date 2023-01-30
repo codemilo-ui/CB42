@@ -66,12 +66,12 @@ async def status():
 
         await asyncio.sleep(10)
 
-def get_verify_role_id():
-    return ver.settings.find_one({"name": "verify_role"})["role_id"]
+def get_verify_role_id(server_id):
+    return ver.settings.find_one({"name": "verify_role", "server_id": server_id})["role_id"]
 
 # Update the verify role ID in the database
-def update_verify_role_id(role_id):
-    ver.settings.update_one({"name": "verify_role"}, {"$set": {"role_id": role_id}})
+def update_verify_role_id(server_id, role_id):
+    ver.settings.update_one({"name": "verify_role", "server_id": server_id}, {"$set": {"role_id": role_id}}, upsert=True)
 
 def get_welcome_channel_id():
     return wel.settings.find_one({"name": "welcome_channel"})["channel_id"]
@@ -98,26 +98,13 @@ async def send_welcome_message(member):
     # Get the channel
     channel = client.get_channel(channel_id)
     
-    # Create the custom welcome image
-    avatar_url = member.avatar.url
-    response = requests.get(avatar_url)
-    img = Image.open(io.BytesIO(response.content))
-    img = img.resize((1100, 500), Image.ANTIALIAS)
-
-    font_type = ImageFont.truetype("arial.ttf", 40)
-    font_type_small = ImageFont.truetype("arial.ttf", 20)
-    draw = ImageDraw.Draw(img)
-    draw.text((0, 0), f"Welcome {member.name}#{member.discriminator}", font=font_type, fill=(255, 255, 255))
-    draw.text((0, 70), "to the server!", font=font_type_small, fill=(255, 255, 255))
-
-    img_io = io.BytesIO()
-    img_io.name = "welcome.png"
-    img.save(img_io, "PNG")
-    img_io.seek(0)
-
+    # Create the welcome message
+    welcome_message = f"Welcome to the server, {member.mention}! We're glad to have you here!"
+    embed = discord.Embed(title = welcome_message)
+    embed.set_thumbnail(url= member.avatar.url)
+    
     # Send the welcome message
-    file = discord.File(img_io, filename="welcome.png")
-    await channel.send(file=file)
+    await channel.send(embed=embed)
 
 
 async def send_leave_message(member):
@@ -162,24 +149,34 @@ async def scam_check(message):
 
 @client.command()
 async def verify(ctx):
-    # Get the verify role ID
-    verify_role_id = get_verify_role_id()
-    role = discord.utils.get(ctx.guild.roles, id=verify_role_id)
-    # Add the role to the member
-    await ctx.author.add_roles(role)
-    await ctx.send(f"{ctx.author.mention} has been verified!")
+    # Get the server specific verify role ID
+    verify_role_id = ver.settings.find_one({"name": "verify_role", "server_id": ctx.guild.id})
+    if verify_role_id:
+        verify_role_id = verify_role_id["role_id"]
+        role = discord.utils.get(ctx.guild.roles, id=verify_role_id)
+        # Add the role to the member
+        await ctx.author.add_roles(role)
+        await ctx.send(f"{ctx.author.mention} has been verified!")
+    else:
+        await ctx.send("No verify role has been set for this server.")
+
 
 @client.command()
 async def setverifyrole(ctx, role: discord.Role):
-    # Check if the role exists
-    if role in ctx.guild.roles:
-        # Update the verify role ID in the database
-        update_verify_role_id(role.id)
-        await ctx.send(f"The designated verify role has been set to {role.name}.")
+    # Get the server ID
+    server_id = str(ctx.guild.id)
+    
+    # Check if the role exists in the database for the current server
+    result = ver.find_one({"server_id": server_id, "name": "verify_role"})
+    if result:
+        # Update the verify role ID in the database for the current server
+        ver.update_one({"server_id": server_id, "name": "verify_role"}, {"$set": {"role_id": role.id}})
+        await ctx.send(f"The designated verify role has been set to {role.name} for server {ctx.guild.name}.")
     else:
-        # Insert the verify role into the database
-        ver.insert_one({"name": "verify_role", "role_id": role.id})
-        await ctx.send(f"The designated verify role has been set to {role.name}.")
+        # Insert the verify role into the database for the current server
+        ver.insert_one({"server_id": server_id, "name": "verify_role", "role_id": role.id})
+        await ctx.send(f"The designated verify role has been set to {role.name} for server {ctx.guild.name}.")
+
 
 @client.command(aliases=['prefix'])
 @commands.has_permissions(manage_guild=True)
