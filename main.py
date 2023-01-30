@@ -1035,7 +1035,7 @@ async def rank(ctx):
         await ctx.respond("You did not level in this server yet!")
 
     # Get the user's avatasr
-    ava = ctx.author.avatar_url
+    ava = ctx.author.avatar.url
     response = requests.get(ava)
     imge = Image.open(BytesIO(response.content))
     imge = imge.resize((100, 100))
