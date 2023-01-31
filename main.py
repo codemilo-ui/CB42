@@ -33,11 +33,8 @@ coll = db["prefix"]
 collection = db["level"]
 wel = db["welcomeandleave"]
 lev = db["welcomeandleave"]
-warned_users = []
-timed_out_users = []
-MESSAGE_THRESHOLD = 3
-WARNING_THRESHOLD = 3
-TIMEOUT_DURATION = 60
+warnings = {}
+timeout_duration = 60
 
 
 def prefix(client, message):
@@ -1116,23 +1113,29 @@ async def on_message(message):
     await client.process_commands(message)
     await scam_check(message)
 
-    if message.author.id in warned_users:
-        if warned_users.count(message.author.id) >= WARNING_THRESHOLD:
-            timed_out_users.append(message.author.id)
-            await message.channel.set_permissions(message.author, send_messages=False)
-            await message.author.send(f"You have been timed out for {TIMEOUT_DURATION} seconds for spamming.")
-            warned_users.remove(message.author.id)
-            await asyncio.sleep(TIMEOUT_DURATION)
-            await message.channel.set_permissions(message.author, send_messages=True)
-            await message.author.send("Your timeout is over.")
-            timed_out_users.remove(message.author.id)
-        else:
-            await message.delete()
-            await message.author.send(f"You have been warned for spamming. Please stop, or you will be timed out for {TIMEOUT_DURATION} seconds.")
+    author = message.author
+    guild = message.guild
+
+    if author.bot:
+        return
+
+    if author not in warnings:
+        warnings[author] = 0
+
+    warnings[author] += 1
+
+    if warnings[author] >= 3:
+        for role in guild.roles:
+            if role.name == "Muted":
+                await author.add_roles(role)
+                await message.channel.send(f"{author.mention} has been muted for spamming.")
+                warnings[author] = 0
+                await asyncio.sleep(timeout_duration)
+                await author.remove_roles(role)
+                break
     else:
-        if len(message.author.messages) >= MESSAGE_THRESHOLD:
-            warned_users.append(message.author.id)
-            await message.author.send(f"You are spamming. Please stop, or you will be warned for spamming.")
+        await message.delete()
+        await message.channel.send(f"{author.mention}, please stop spamming. You have {3 - warnings[author]} warning(s) left.")
 try:
     client.loop.create_task(status())
     client.run(token_)
