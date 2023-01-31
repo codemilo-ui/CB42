@@ -1118,30 +1118,6 @@ async def on_message(message):
     message.content = message.content.lower()
     await client.process_commands(message)
     await scam_check(message)
-
-    author = message.author
-    guild = message.guild
-
-    if author.bot:
-        return
-
-    if author not in warnings:
-        warnings[author] = 0
-
-    warnings[author] += 1
-
-    if warnings[author] >= 3:
-        for role in guild.roles:
-            if role.name == "Muted":
-                await author.add_roles(role)
-                await message.channel.send(f"{author.mention} has been muted for spamming.")
-                warnings[author] = 0
-                await asyncio.sleep(timeout_duration)
-                await author.remove_roles(role)
-                break
-    else:
-        await message.delete()
-        await message.channel.send(f"{author.mention}, please stop spamming. You have {3 - warnings[author]} warning(s) left.")
 try:
     client.loop.create_task(status())
     client.run(token_)
