@@ -29,20 +29,14 @@ token_ = os.environ['TOKEN']
 mango_url = os.environ['MONGO']
 cluster = MongoClient(mango_url, tlsCAFile=e)
 db = cluster["cb42"]
-coll = db["prefix"]
 collection = db["level"]
 wel = db["welcomeandleave"]
 lev = db["welcomeandleave"]
+swear = db["swear"]
 warnings = {}
 timeout_duration = 60
 
-
-def prefix(client, message):
-    prefix = coll.find_one({"_id": message.guild.id})["prefix"]
-    return prefix
-
-
-client = commands.Bot(command_prefix=prefix,
+client = commands.Bot(command_prefix=".",
                       case_insensitive=True, help_command=None, intents=intents)
 
 client.launch_time = datetime.utcnow()
@@ -51,7 +45,7 @@ client.launch_time = datetime.utcnow()
 @client.event
 async def on_ready():
     await client.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f"on {len(client.guilds)} servers"))
-    await client.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="cb!help | cb42bot.tk"))
+    await client.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="/help | cb42bot.tk"))
     await client.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Slash Commands!"))
     print(f"{client.user.name} says, Hello world")
 
@@ -59,7 +53,7 @@ async def on_ready():
 async def status():
     await client.wait_until_ready()
 
-    statuses = [f"on {len(client.guilds)} servers", "cb!help"]
+    statuses = [f"on {len(client.guilds)} servers", "/help"]
 
     while not client.is_closed():
 
@@ -112,18 +106,7 @@ async def send_leave_message(member):
 
 @client.event
 async def on_guild_join(guild):
-    permissions = discord.Permissions(send_messages=False, connect=False)
-    muted_role = await guild.create_role(name="Muted", permissions=permissions)
-    for channel in guild.text_channels:
-        await channel.set_permissions(muted_role, send_messages=False)
-    for channel in guild.voice_channels:
-        await channel.set_permissions(muted_role, connect=False)
-    coll.insert_one({"_id": guild.id, "prefix": "cb!"})
-
-
-@client.event
-async def on_guild_remove(guild):
-    coll.delete_one({"_id": guild.id})
+    swear[str(guild.id)].insert_one({"guild_id": guild.id, "filter_enabled": False})
 
 
 @client.event
@@ -135,6 +118,7 @@ async def on_member_join(member):
 async def on_member_remove(member):
     await send_leave_message(member)
 
+
 @client.event
 async def on_message_edit(before, after):
     content = after.content.lower()
@@ -142,6 +126,7 @@ async def on_message_edit(before, after):
         if word.lower() in content:
             await after.delete()
             return
+
 
 async def scam_check(message):
     with open('blocked_links.json', 'r') as f1:
@@ -151,42 +136,6 @@ async def scam_check(message):
         if links in message.content:
             await message.delete()
             await message.channel.send("You can't send this link! ❌", delete_after=3)
-
-
-@client.command(aliases=['prefix'])
-@commands.has_permissions(manage_guild=True)
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def setprefix(ctx, prefix=None):
-    if prefix is None:
-        await ctx.reply("Please enter a prefix!", delete_after=5)
-    else:
-        coll.update_one({"_id": ctx.guild.id}, {
-                        "$set": {"prefix": prefix}}, upsert=True)
-        await ctx.reply("**Prefix has been changed to:** `{}`".format(prefix))
-
-
-@client.command()
-async def setwelcomechannel(ctx, channel: discord.TextChannel):
-    existing_channel = wel.settings.find_one({"name": "welcome_channel"})
-    if existing_channel is None:
-        wel.settings.insert_one(
-            {"name": "welcome_channel", "channel_id": channel.id})
-    else:
-        wel.settings.update_one({"name": "welcome_channel"}, {
-                                "$set": {"channel_id": channel.id}})
-    await ctx.send(f"The designated channel has been set to {channel.mention}.")
-
-
-@client.command()
-async def setleavechannel(ctx, channel: discord.TextChannel):
-    existing_channel = lev.settings.find_one({"name": "leave_channel"})
-    if existing_channel is None:
-        lev.settings.insert_one(
-            {"name": "leave_channel", "channel_id": channel.id})
-    else:
-        lev.settings.update_one({"name": "leave_channel"}, {
-                                "$set": {"channel_id": channel.id}})
-    await ctx.send(f"The designated channel has been set to {channel.mention}.")
 
 
 class DropDownMenu(discord.ui.View):
@@ -236,313 +185,6 @@ class DropDownMenu(discord.ui.View):
             )
 
             await interaction.response.send_message(embed=lnembed, view=view, ephemeral=True)
-
-
-@client.command(aliases=['commands'])
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def help(ctx):
-    embed = discord.Embed(
-        title="CB42 help panel",
-        url="https://cb42bot.tk",
-        description="CB42 is an all in one bot you ever need.."
-    )
-
-    embed.set_image(
-        url="https://cdn.discordapp.com/attachments/943039554108133378/1005764186485305345/standard.gif")
-
-    dropdowns = DropDownMenu()
-
-    await ctx.reply(embed=embed, view=dropdowns)
-
-
-@client.command(aliases=['p', 'latency'])
-@commands.cooldown(1, 15, commands.BucketType.user)
-async def ping(ctx):
-    l = round(client.latency * 1000, 1)
-    embed = discord.Embed(
-        title="Pong 🏓", description=f"The bots ping is: `{l}`")
-    await ctx.reply(embed=embed)
-
-
-@client.command(aliases=['code', 'secret', 'pass'])
-@commands.cooldown(1, 15, commands.BucketType.user)
-async def password(ctx):
-    author = ctx.author
-    await ctx.reply("Check your DM's‼", delete_after=3)
-    await ctx.author.send(f"Your secret password is: `{am}`")
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def fact(ctx):
-    await ctx.send(get_fact())
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def topic(ctx):
-
-    await ctx.send(get_topic())
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def showerthought(ctx):
-    shower = get_shower()
-    thought = shower[0]
-    author = shower[1]
-    embed = discord.Embed(title=f"{thought}\n  {author}")
-    await ctx.send(embed=embed)
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def meme(ctx):
-    embed = discord.Embed(title="Meme")
-
-    async with aiohttp.ClientSession() as cs:
-        async with cs.get('https://www.reddit.com/r/memes/top.json?sort=top&t=week&limit=100') as r:
-            res = await r.json()
-            embed.set_image(url=res['data']['children']
-                            [random.randint(0, 25)]['data']['url'])
-
-            await ctx.reply(embed=embed)
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.has_permissions(manage_channels=True)
-async def slowmode(ctx, seconds: int):
-    t = ctx.channel.id
-    await ctx.channel.edit(slowmode_delay=seconds)
-    embed = discord.Embed(
-        title="Success ✅", description=f"**Set the slowmode for <#{t}> as** `{seconds}` **seconds**")
-    await ctx.reply(embed=embed, delete_after=5)
-
-
-@client.command(aliases=['members', 'guildcount'])
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def membercount(ctx):
-    guild = ctx.guild
-    embed = discord.Embed(title="Membercount of this server",
-                          description=f"**This server has** `{guild.member_count}` **members**")
-
-    await ctx.reply(embed=embed)
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def dog(ctx):
-    async with aiohttp.ClientSession() as session:
-        request = await session.get('https://some-random-api.ml/img/dog')
-        dogjson = await request.json()
-    embed = discord.Embed(title="Dog!")
-    embed.set_image(url=dogjson['link'])
-
-    await ctx.reply(embed=embed)
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def cat(ctx):
-    async with aiohttp.ClientSession() as session:
-        request = await session.get('https://some-random-api.ml/img/cat')
-        dogjson = await request.json()
-    embed = discord.Embed(title="Cat!")
-    embed.set_image(url=dogjson['link'])
-
-    await ctx.reply(embed=embed)
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def dice(ctx):
-    num = [
-        '1',
-        '2',
-        '3',
-        '4',
-        '5',
-        '6']
-    embed = discord.Embed(title="Your random number is...",
-                          description=f"Your random number is: {random.choice(num)}")
-    await ctx.reply(embed=embed)
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.has_permissions(kick_members=True)
-async def kick(ctx, member: discord.Member = None, *, reason=None):
-    if member == None:
-        await ctx.reply("Mention the member to be kicked!", delete_after=3)
-    if reason == None:
-        reason = "None"
-    await member.kick(reason=reason)
-    embed = discord.Embed(
-        title="Success ✅", description=f"Successfully kicked {member.mention} from **{ctx.guild}**")
-    await ctx.reply(embed=embed)
-
-
-@client.command(aliases=['8b', '8ball'])
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def eightball(ctx, *, question):
-    responses = [
-        'Hell no.',
-        'Prolly not.',
-        'Idk bro.',
-        'Prolly.',
-        'Hell yeah my dude.',
-        'It is certain.',
-        'It is decidedly so.',
-        'Without a Doubt.',
-        'Yes - Definitely.',
-        'You may rely on it.',
-        'As i see it, Yes.',
-        'Most Likely.',
-        'Outlook Good.',
-        'Yes!',
-        'No!',
-        'Signs a point to Yes!',
-        'Reply Hazy, Try again.',
-        'Better not tell you know.',
-        'Cannot predict now.',
-        'Concentrate and ask again.',
-        "Don't Count on it.",
-        'My reply is No.',
-        'My sources say No.',
-        'Outlook not so good.',
-        'Very Doubtful']
-    eightbembed = discord.Embed(
-        title=f"{question}", description=f"{random.choice(responses)}")
-    await ctx.reply(embed=eightbembed)
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def avatar(ctx, member: discord.Member = None):
-    if member == None:
-        member = ctx.author
-    ava = member.avatar.url
-    e = member.id
-    embed = discord.Embed(
-        title=f"Avatar of {member.name}#{member.discriminator}")
-    embed.set_image(url=ava)
-    await ctx.reply(embed=embed)
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def uptime(ctx):
-    delta_uptime = datetime.utcnow() - client.launch_time
-    hours, remainder = divmod(int(delta_uptime.total_seconds()), 3600)
-    minutes, seconds = divmod(remainder, 60)
-    days, hours = divmod(hours, 24)
-    embed = discord.Embed(title="**CB42's Uptime**",
-                          description=f"`CB42 has been online for -` {days}d, {hours}h, {minutes}m, {seconds}s")
-
-    await ctx.reply(embed=embed)
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def invite(ctx):
-    invitebt = Button(
-        label="Invite CB42",
-        url="https://discord.com/api/oauth2/authorize?client_id=1004727274031038574&permissions=8&redirect_uri=https%3A%2F%2Fcb42bot.tk&response_type=code&scope=bot%20connections%20applications.commands"
-    )
-    view = View()
-    view.add_item(invitebt)
-
-    embed = discord.Embed(title="Invite CB42")
-
-    await ctx.reply(embed=embed, view=view)
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.has_permissions(ban_members=True)
-async def ban(ctx, member: discord.Member = None, *, reason=None):
-    if member == None:
-        await ctx.reply("Mention the member to be banned!", delete_after=3)
-    if reason == None:
-        reason = "None"
-    await member.ban(reason=reason)
-    embed = discord.Embed(
-        title="Success ✅", description=f"Successfully banned {member.mention} from **{ctx.guild}**")
-    await ctx.reply(embed=embed)
-
-
-@client.command()
-@commands.has_permissions(ban_members=True)
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def unban(ctx, id: int):
-    user = await client.fetch_user(id)
-    await ctx.guild.unban(user)
-    await ctx.reply(f'Unbanned {user.mention}')
-
-
-@client.command()
-@commands.has_permissions(manage_roles=True)
-async def addrole(ctx, user: discord.Member, *, role: discord.Role):
-    await user.add_roles(role)
-    await ctx.reply(f"Added {role} to {user.mention}")
-
-
-@client.command()
-@commands.has_permissions(manage_roles=True)
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def removerole(ctx, user: discord.Member, *, role: discord.Role):
-    await user.remove_roles(role)
-    await ctx.reply(f"Removed {role} from {user.mention}")
-
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def credits(ctx):
-    cbt = Button(
-        label="Github",
-        url="https://github.com/CB42Bot/CB42"
-    )
-    view = View()
-    view.add_item(cbt)
-
-    embed = discord.Embed(title=f"Developers of {client.user.name}",
-                          description=f"CB42 was made by [sudo-adrian](https://github.com/sudo-adrian) and [codemilo-ui](https://github.com/codemilo-ui)")
-
-    await ctx.reply(embed=embed, view=view)
-
-
-@client.command(aliases=['purge'])
-@commands.has_permissions(manage_messages=True)
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def clear(ctx, amount=1):
-    amount = amount+1
-    realamount = amount-1
-    if amount > 151:
-        await ctx.reply('**Not able to delete so many messages! Please try a number below 150.** ❌', delete_after=5)
-    else:
-        await ctx.channel.purge(limit=amount)
-        await ctx.send(f'**Cleared {realamount} messages!** ✅', delete_after=3)
-
-
-@client.command(aliases=['level'])
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def rank(ctx):
-    author_id = ctx.author.id
-    level = collection.find_one({"_id": author_id})["Level"]
-    await ctx.reply(f"**You are level:** `{level}`")
-
-
-@client.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        await ctx.reply("This command doesn't exist!", delete_after=3)
-    if isinstance(error, commands.CommandOnCooldown):
-        await ctx.reply(error, delete_after=3)
-    if isinstance(error, commands.MissingPermissions):
-        await ctx.reply("You dont have the permission to use this command!", delete_after=3)
-    if isinstance("You are missing a required argument", commands.MissingRequiredArgument):
-        await ctx.reply(error, delete_after=3)
 
 # SLASH
 
@@ -609,19 +251,6 @@ async def mute(ctx, user: discord.Member, duration: int, duration_type: str, rea
 async def unmute(ctx, member: Option(discord.Member, required=True)):
     await member.remove_timeout()
     await ctx.respond(f"<@{member.id}> has been unmuted by <@{ctx.author.id}>.")
-
-
-@client.slash_command(aliases=['prefix'])
-@commands.has_permissions(manage_guild=True)
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def setprefix(ctx, prefix=None):
-    if prefix is None:
-        await ctx.respond("Please enter a prefix!", ephemeral=True)
-    else:
-        coll.update_one({"_id": ctx.guild.id}, {
-                        "$set": {"prefix": prefix}}, upsert=True)
-        await ctx.respond("Prefix has been changed to: {}".format(prefix))
-
 
 @client.slash_command(name="help", description="Get all the commands of the bot")
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1063,6 +692,26 @@ async def uptime(ctx):
                           description=f"`CB42 has been online for -` {days}d, {hours}h, {minutes}m, {seconds}s")
 
     await ctx.respond(embed=embed, ephemeral=True)
+
+@client.slash_command(name="toggle-swear", description="Turn the swear filter on and off")
+@commands.cooldown(1, 5, commands.BucketType.user)
+@commands.has_permissions(ban_members=True)
+async def toggle_swear(ctx, status: discord.Option(str, required=True, choices=['Enabled', 'Disabled'])):
+    settings = swear[str(ctx.guild.id)].find_one({"guild_id": ctx.guild.id})
+    filter_enabled = settings["filter_enabled"]
+
+    if status == "Enabled":
+        filter_enabled = True
+    elif status == "Disabled":
+        filter_enabled = False
+    else:
+        return await ctx.respond("Invalid status. Use `Enable` or `Disable`.")
+
+    swear[str(ctx.guild.id)].update_one({"guild_id": ctx.guild.id}, {"$set": {"filter_enabled": filter_enabled}})
+    if filter_enabled:
+        await ctx.respond("Anti-swear filter enabled.")
+    else:
+        await ctx.respond("Anti-swear filter disabled.")
 # SLASH
 
 
@@ -1075,9 +724,8 @@ async def on_message(message):
         return
 
     if client.user.mentioned_in(message) and message.mention_everyone is False:
-        prefix = coll.find_one({"_id": message.guild.id})['prefix']
         embed = discord.Embed(
-            title="CB42", description=f"Type `{prefix}`help for more info")
+            title="CB42", description="Type `/help` for more info")
         await message.channel.send(embed=embed, delete_after=10)
         return
 
@@ -1117,11 +765,15 @@ async def on_message(message):
         collection.update_one({"_id": author_id}, {
                               "$set": {"Level": new_level}}, upsert=True)
         await message.channel.send(f"{message.author.mention} is now level **{new_level}**!")
-    answer = check_message(message)
-    if answer[0] == "del":
-        await message.delete()
-        await message.channel.send(answer[1], delete_after=3)
 
+    settings = swear[str(message.guild.id)].find_one(
+        {"guild_id": message.guild.id})
+    filter_enabled = settings["filter_enabled"]
+
+    if filter_enabled:
+        if any(word in message.content.lower() for word in bad_words):
+            await message.delete()
+            await message.channel.send("Your message contained inappropriate language.")
     message.content = message.content.lower()
     await client.process_commands(message)
     await scam_check(message)
