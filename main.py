@@ -139,7 +139,7 @@ async def on_member_remove(member):
 async def on_message_edit(before, after):
     if bad_words in after.content:
         await after.delete()
-        
+
 async def scam_check(message):
     with open('blocked_links.json', 'r') as f1:
         scam_links = json.load(f1)
@@ -202,7 +202,7 @@ class DropDownMenu(discord.ui.View):
             view = View()
             modembed = discord.Embed(
                 title="Moderation commands",
-                description="`clear`, `kick`, `ban`, `unban`, `membercount`, `setprefix`, `addrole`, `delrole`, `mute`, `unmute`",
+                description="`clear`, `kick`, `ban`, `unban`, `membercount`, `setprefix`, `addrole`, `delrole`, `mute`, `unmute`, `set-welcome-channel`, `set-leave-channel`",
             )
 
             await interaction.response.send_message(embed=modembed, view=view, ephemeral=True)
