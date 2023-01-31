@@ -33,8 +33,7 @@ coll = db["prefix"]
 collection = db["level"]
 wel = db["welcomeandleave"]
 lev = db["welcomeandleave"]
-warnings = {}
-timeout_duration = 60
+warn_count = {}
 
 
 def prefix(client, message):
@@ -1117,18 +1116,29 @@ async def on_message(message):
     words = message.content.split()
     bad_word_count = 0
     for word in words:
-        if word in bad_words:
+        if word.lower() in [bad_word.lower() for bad_word in bad_words]:
             bad_word_count += 1
     
-    if bad_word_count > 3:
-        await message.author.add_roles(muted_role)
-        await message.channel.send(f'{message.author.mention} has been muted for 10 minutes for using too many bad words.')
+    if bad_word_count > 0:
+        if message.author.id not in warn_count:
+            warn_count[message.author.id] = 1
+        else:
+            warn_count[message.author.id] += 1
         
-        # mute the user for 10 minutes
-        await asyncio.sleep(600)
-        
-        await message.author.remove_roles(muted_role)
-        await message.channel.send(f'{message.author.mention} has been unmuted.')
+        if warn_count[message.author.id] <= 3:
+            await message.channel.send(f'{message.author.mention}, please avoid using bad words. This is your {warn_count[message.author.id]} warning.')
+        else:
+            await message.delete()
+            await message.author.add_roles(muted_role)
+            await message.channel.send(f'{message.author.mention} has been muted for 10 minutes for using too many bad words.')
+
+            # mute the user for 10 minutes
+            await asyncio.sleep(600)
+            
+            warn_count[message.author.id] = 0
+            await message.author.remove_roles(muted_role)
+            await message.channel.send(f'{message.author.mention} has been unmuted.')
+
     message.content = message.content.lower()
     await client.process_commands(message)
     await scam_check(message)
