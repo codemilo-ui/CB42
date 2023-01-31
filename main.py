@@ -1129,12 +1129,16 @@ async def on_message(message):
             await message.delete()
             await message.channel.send(f'{message.author.mention}, please avoid using bad words. This is your {warn_count[message.author.id]} warning.')
         elif warn_count[message.author.id] > 3:
+            for role in guild.roles:
+                if role.name == "Muted":
+                    await message.author.add_roles(muted_role)
             await message.delete()
-            await message.author.add_roles(muted_role)
             await message.channel.send(f'{message.author.mention} has been muted for 10 minutes for using too many bad words.')
             await asyncio.sleep(600)
             warn_count[message.author.id] = 0
-            await message.author.remove_roles(muted_role)
+            for role in guild.roles:
+                if role.name == "Muted":
+                    await message.author.remove_roles(muted_role)
             await message.channel.send(f'{message.author.mention} has been unmuted.')
 
     message.content = message.content.lower()
