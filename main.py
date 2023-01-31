@@ -112,6 +112,14 @@ async def send_leave_message(member):
 
 @client.event
 async def on_guild_join(guild):
+    permissions = discord.Permissions(send_messages=False, connect=False)
+    channels = guild.channels
+    muted_role = await guild.create_role(name="Muted", permissions=permissions)
+    for channel in channels:
+        if isinstance(channel, discord.TextChannel):
+            await channel.set_permissions(role, send_messages=False)
+        if isinstance(channel, discord.VoiceChannel):
+            await channel.set_permissions(role, connect=False)
     coll.insert_one({"_id": guild.id, "prefix": "cb!"})
 
 
