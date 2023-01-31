@@ -135,7 +135,11 @@ async def on_member_join(member):
 async def on_member_remove(member):
     await send_leave_message(member)
 
-
+@client.event
+async def on_message_edit(before, after):
+    if bad_words in after.content:
+        await after.delete()
+        
 async def scam_check(message):
     with open('blocked_links.json', 'r') as f1:
         scam_links = json.load(f1)
