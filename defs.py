@@ -31,6 +31,13 @@ def in_list(str_, list_):
             if element.replace(item, "") != element:
                 return True
     return False
+def check_message(message):
+    #return type: (action, message, delete_after (0 if it shouldnt be deleted))
+    if in_list(message.content, bad_words):
+        return ("del", f"Dont say bad words {message.author.mention}!", 5)
+    
+    return (None, None, None)
+
 
 # def get_shower():
 # 	data = requests.get('https://www.reddit.com/r/showerthoughts/top.json?sort=top&t=week&limit=100')

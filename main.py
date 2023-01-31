@@ -33,7 +33,8 @@ coll = db["prefix"]
 collection = db["level"]
 wel = db["welcomeandleave"]
 lev = db["welcomeandleave"]
-warn_count = {}
+warnings = {}
+timeout_duration = 60
 
 
 def prefix(client, message):
@@ -49,10 +50,6 @@ client.launch_time = datetime.utcnow()
 
 @client.event
 async def on_ready():
-    global muted_role
-    for role in client.guilds[0].roles:
-        if role.name == 'Muted':
-            muted_role = role
     await client.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f"on {len(client.guilds)} servers"))
     await client.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="cb!help | cb42bot.tk"))
     await client.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Slash Commands!"))
@@ -1113,37 +1110,38 @@ async def on_message(message):
         collection.update_one({"_id": author_id}, {
                               "$set": {"Level": new_level}}, upsert=True)
         await message.channel.send(f"{message.author.mention} is now level **{new_level}**!")
-    words = message.content.split()
-    bad_word_count = 0
-    for word in words:
-        if word.lower() in [bad_word.lower() for bad_word in bad_words]:
-            bad_word_count += 1
-    
-    if bad_word_count > 0:
-        if message.author.id not in warn_count:
-            warn_count[message.author.id] = 1
-        else:
-            warn_count[message.author.id] += 1
-        
-        if warn_count[message.author.id] <= 3:
-            await message.delete()
-            await message.channel.send(f'{message.author.mention}, please avoid using bad words. This is your {warn_count[message.author.id]} warning.')
-        elif warn_count[message.author.id] > 3:
-            for role in guild.roles:
-                if role.name == "Muted":
-                    await message.author.add_roles(muted_role)
-            await message.delete()
-            await message.channel.send(f'{message.author.mention} has been muted for 10 minutes for using too many bad words.')
-            await asyncio.sleep(600)
-            warn_count[message.author.id] = 0
-            for role in guild.roles:
-                if role.name == "Muted":
-                    await message.author.remove_roles(muted_role)
-            await message.channel.send(f'{message.author.mention} has been unmuted.')
+    answer = check_message(message)
+    if answer[0] == "del":
+        await message.delete()
+        await message.channel.send(answer[1], delete_after=3)
 
     message.content = message.content.lower()
     await client.process_commands(message)
     await scam_check(message)
+
+    author = message.author
+    guild = message.guild
+
+    if author.bot:
+        return
+
+    if author not in warnings:
+        warnings[author] = 0
+
+    warnings[author] += 1
+
+    if warnings[author] >= 3:
+        for role in guild.roles:
+            if role.name == "Muted":
+                await author.add_roles(role)
+                await message.channel.send(f"{author.mention} has been muted for spamming.")
+                warnings[author] = 0
+                await asyncio.sleep(timeout_duration)
+                await author.remove_roles(role)
+                break
+    else:
+        await message.delete()
+        await message.channel.send(f"{author.mention}, please stop spamming. You have {3 - warnings[author]} warning(s) left.")
 try:
     client.loop.create_task(status())
     client.run(token_)
