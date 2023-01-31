@@ -50,6 +50,10 @@ client.launch_time = datetime.utcnow()
 
 @client.event
 async def on_ready():
+    global muted_role
+    for role in client.guilds[0].roles:
+        if role.name == 'Muted':
+            muted_role = role
     await client.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f"on {len(client.guilds)} servers"))
     await client.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="cb!help | cb42bot.tk"))
     await client.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Slash Commands!"))
@@ -112,10 +116,12 @@ async def send_leave_message(member):
 
 @client.event
 async def on_guild_join(guild):
-    permissions = discord.Permissions(send_messages=False)
+    permissions = discord.Permissions(send_messages=False, connect=False)
     muted_role = await guild.create_role(name="Muted", permissions=permissions)
     for channel in guild.text_channels:
         await channel.set_permissions(muted_role, send_messages=False)
+    for channel in guild.voice_channels:
+        await channel.set_permissions(muted_role, connect=False)
     coll.insert_one({"_id": guild.id, "prefix": "cb!"})
 
 
@@ -1108,38 +1114,24 @@ async def on_message(message):
         collection.update_one({"_id": author_id}, {
                               "$set": {"Level": new_level}}, upsert=True)
         await message.channel.send(f"{message.author.mention} is now level **{new_level}**!")
-    answer = check_message(message)
-    if answer[0] == "del":
-        await message.delete()
-        await message.channel.send(answer[1], delete_after=3)
-
+    words = message.content.split()
+    bad_word_count = 0
+    for word in words:
+        if word in bad_words:
+            bad_word_count += 1
+    
+    if bad_word_count > 3:
+        await message.author.add_roles(muted_role)
+        await message.channel.send(f'{message.author.mention} has been muted for 10 minutes for using too many bad words.')
+        
+        # mute the user for 10 minutes
+        await asyncio.sleep(600)
+        
+        await message.author.remove_roles(muted_role)
+        await message.channel.send(f'{message.author.mention} has been unmuted.')
     message.content = message.content.lower()
     await client.process_commands(message)
     await scam_check(message)
-
-    author = message.author
-    guild = message.guild
-
-    if author.bot:
-        return
-
-    if author not in warnings:
-        warnings[author] = 0
-
-    warnings[author] += 1
-
-    if warnings[author] >= 3:
-        for role in guild.roles:
-            if role.name == "Muted":
-                await author.add_roles(role)
-                await message.channel.send(f"{author.mention} has been muted for spamming.")
-                warnings[author] = 0
-                await asyncio.sleep(timeout_duration)
-                await author.remove_roles(role)
-                break
-    else:
-        await message.delete()
-        await message.channel.send(f"{author.mention}, please stop spamming. You have {3 - warnings[author]} warning(s) left.")
 try:
     client.loop.create_task(status())
     client.run(token_)
