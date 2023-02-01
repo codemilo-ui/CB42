@@ -7,7 +7,6 @@ from datetime import *
 from datetime import timedelta
 
 import aiohttp
-import google
 from googlesearch import search
 import certifi
 import discord
