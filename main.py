@@ -774,7 +774,7 @@ async def on_message(message):
     if filter_enabled:
         if any(word in message.content.lower() for word in bad_words):
             await message.delete()
-            embed = Embed(title="Inappropriate language detected", description="Your message contained inappropriate language.", color=0x000000)
+            embed = Embed(title="Inappropriate language detected", description="Your message contained inappropriate language.", color=0x000000, delete_after=3)
             await message.channel.send(embed=embed)
     message.content = message.content.lower()
     await client.process_commands(message)
