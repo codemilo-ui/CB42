@@ -218,7 +218,7 @@ async def timeout_user(ctx, member, reason, timeouttime):
 async def google(ctx, query: Option(str)):
     msg = await ctx.respond(f"Searching...🔍")
     embed = discord.Embed(title=f"Search results", description=f"Query: {query}")
-    for j in search(query, num=5, stop=5, pause=2):
+    for j in search(query, num_results=5, stop=5, pause=2):
         embed.add_field(name="Search result:", value=j)
     await msg.edit(embed=embed)
 
