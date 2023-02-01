@@ -34,7 +34,7 @@ collection = db["level"]
 wel = db["welcomeandleave"]
 lev = db["welcomeandleave"]
 swear = db["swear"]
-bot = db["botset"]
+antibot = db["botset"]
 warnings = {}
 timeout_duration = 60
 
@@ -109,21 +109,15 @@ async def send_leave_message(member):
 @client.event
 async def on_guild_join(guild):
     swear[str(guild.id)].insert_one({"guild_id": guild.id, "filter_enabled": False})
-    bot[str(guild.id)].insert_one({"guild_id": guild.id, "anti_bot_enabled": False})
 
 
 @client.event
 async def on_member_join(member):
     await send_welcome_message(member)
-    if member.bot:
-        guild_id = str(member.guild.id)
-        settings = bot[guild_id].find_one({"guild_id": guild_id})
-        anti_bot_enabled = settings["anti_bot_enabled"]
-        
-        if anti_bot_enabled:
-            await member.kick(reason="Bot detected")
-            embed = discord.Embed(title="Bot Kicked", description=f"Bot {member} has been kicked as anti-bot is enabled.", color=0x000000)
-            await member.guild.owner.send(embed=embed)
+    guild_id = str(member.guild.id)
+    guild_settings = antibot.find_one({"guild_id": guild_id})
+    if guild_settings and guild_settings["anti_bot"] and member.bot:
+        await member.kick()
 
 
 @client.event
@@ -720,20 +714,33 @@ async def toggle_swear(ctx, status: discord.Option(str, required=True, choices=[
 @client.slash_command(name="toggle-anti-bot", description="Turn the swear filter on and off")
 @commands.cooldown(1, 5, commands.BucketType.user)
 @commands.has_permissions(ban_members=True)
-async def anti_bot(ctx, status: discord.Option(str, required=True, choices=['Enabled', 'Disabled'])):
+async def antibot(ctx, option=None):
     guild_id = str(ctx.guild.id)
-    settings = bot[guild_id].find_one({"guild_id": guild_id})
-    anti_bot_enabled = settings["anti_bot_enabled"]
-
-    if status == "Enabled":
-        bot[guild_id].update_one({"guild_id": guild_id}, {"$set": {"anti_bot_enabled": True}})
-        embed = discord.Embed(title="Anti Bot Enabled", description=f"Anti Bot has been enabled for this server.", color=0x000000)
-    elif status == "Disabled":
-        bot[guild_id].update_one({"guild_id": guild_id}, {"$set": {"anti_bot_enabled": False}})
-        embed = discord.Embed(title="Anti Bot Disabled", description=f"Anti Bot has been disabled for this server.", color=0x000000)
+    guild_settings = antibot.find_one({"guild_id": guild_id})
+    if guild_settings:
+        if option == "Enabled":
+            antibot.update_one({"guild_id": guild_id}, {"$set": {"anti_bot": True}})
+            embed = discord.Embed(title="Anti-Bot Setting", description="Anti-Bot setting updated to Enabled", color=0x000000)
+            await ctx.respond(embed=embed)
+        elif option == "Disabled":
+            antibot.update_one({"guild_id": guild_id}, {"$set": {"anti_bot": False}})
+            embed = discord.Embed(title="Anti-Bot Setting", description="Anti-Bot setting updated to Disabled", color=0x000000)
+            await ctx.respond(embed=embed)
+        else:
+            embed = discord.Embed(title="Anti-Bot Setting", description="Invalid option, use `Enabled` or `Disabled`", color=0x000000)
+            await ctx.respond(embed=embed)
     else:
-        embed = discord.Embed(title="Invalid Option", description=f"Please enter either 'enable' or 'disable'.", color=0x000000)
-    await ctx.respond(embed=embed)
+        if option == "Enabled":
+            antibot.insert_one({"guild_id": guild_id, "anti_bot": True})
+            embed = discord.Embed(title="Anti-Bot Setting", description="Anti-Bot setting updated to Enabled", color=0x000000)
+            await ctx.respond(embed=embed)
+        elif option == "Disabled":
+            antibot.insert_one({"guild_id": guild_id, "anti_bot": False})
+            embed = discord.Embed(title="Anti-Bot Setting", description="Anti-Bot setting updated to Disabled", color=0x000000)
+            await ctx.respond(embed=embed)
+        else:
+            embed = discord.Embed(title="Anti-Bot Setting", description="Invalid option, use `Enabled` or `Disabled`", color=0x000000)
+            await ctx.respond(embed=embed)
 
 
 # SLASH
