@@ -704,13 +704,15 @@ async def toggle_swear(ctx, status: discord.Option(str, required=True, choices=[
     elif status == "Disabled":
         filter_enabled = False
     else:
-        return await ctx.respond("Invalid status. Use `Enable` or `Disable`.")
+        return await ctx.respond("Invalid status. Use `Enable` or `Disable`.", ephemeral=True)
 
     swear[str(ctx.guild.id)].update_one({"guild_id": ctx.guild.id}, {"$set": {"filter_enabled": filter_enabled}})
     if filter_enabled:
-        await ctx.respond("Anti-swear filter enabled.")
+        embed = Embed(title="Anti-swear filter enabled", color=0x000000)
+        await ctx.respond(embed=embed)
     else:
-        await ctx.respond("Anti-swear filter disabled.")
+        embed = Embed(title="Anti-swear filter disabled", color=0x000000)
+        await ctx.respond(embed=embed)
 # SLASH
 
 
@@ -772,7 +774,8 @@ async def on_message(message):
     if filter_enabled:
         if any(word in message.content.lower() for word in bad_words):
             await message.delete()
-            await message.channel.send("Your message contained inappropriate language.")
+            embed = Embed(title="Inappropriate language detected", description="Your message contained inappropriate language.", color=0x000000)
+            await message.channel.send(embed=embed)
     message.content = message.content.lower()
     await client.process_commands(message)
     await scam_check(message)
