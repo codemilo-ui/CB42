@@ -9,3 +9,4 @@ dnspython
 python-dotenv
 beautifulsoup4
 Pillow
+googlesearch-python

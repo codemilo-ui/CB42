@@ -7,6 +7,8 @@ from datetime import *
 from datetime import timedelta
 
 import aiohttp
+import google
+from googlesearch import search
 import certifi
 import discord
 import pymongo
@@ -214,20 +216,12 @@ async def timeout_user(ctx, member, reason, timeouttime):
 
 @client.slash_command(name="google", description="Google something...")
 @commands.cooldown(1, 5, commands.BucketType.user)
-async def google(ctx, *, query: str):
-    await ctx.respond(f'Searching for "{query}"...')
-    await ctx.defer()
-    response = requests.get(f'https://www.google.com/search?q={query}')
-    soup = BeautifulSoup(response.content, 'html.parser')
-    link = soup.find('a', {'class': 'BNeawe tAd8D AP7Wnd'}).get('href')
-    text = soup.find('div', {'class': 'BNeawe iBp4i AP7Wnd'}).text
-    embed = discord.Embed(title=query, description=text, color=0x00ff00)
-    embed.set_author(name='Google Search', url=link)
-    embed.set_footer(text='powered by google')
-    await ctx.respond(embed=embed)
-    images = soup.find_all('img')
-    for i, image in enumerate(images[:5]):
-        await ctx.followup.send(image['src'])
+async def google(ctx, query: Option(str)):
+    msg = await ctx.respond(f"Searching...🔍")
+    embed = discord.Embed(title=f"Search results", description=f"Query: {query}")
+    for j in search(query, num=5, stop=5, pause=2):
+        embed.add_field(name="Search result:", value=j)
+    await msg.edit(embed=embed)
 
 
 @client.slash_command(description="mutes a member")
@@ -542,7 +536,6 @@ async def ban(ctx, user: discord.Option(discord.Member, description="Please sele
     await ctx.respond(embed=ban_embed, view=view)
     confirm.callback = button_callback
     cancel.callback = button2_callback
-
 
 @client.slash_command(name="invite", description="Invite CB42 to your server")
 @commands.cooldown(1, 5, commands.BucketType.user)
