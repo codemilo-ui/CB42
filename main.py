@@ -621,13 +621,12 @@ async def slowmode(ctx, seconds: Option(int, required=True)):
 @client.slash_command(name="rank", description="Shows the rank of a user")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def rank(ctx):
-    guild_id = ctx.guild.id
     author_id = ctx.author.id
     level = collection.find_one(
-        {"GuildID": guild_id, "_id": author_id})["Level"]
-    xp = collection.find_one({"GuildID": guild_id, "_id": author_id})["XP"]
+        {"_id": author_id})["Level"]
+    xp = collection.find_one({"_id": author_id})["XP"]
 
-    if level is None:
+    if author_id is None:
         await ctx.respond("You did not level in this server yet!")
 
     ava = ctx.author.avatar.url
@@ -635,7 +634,7 @@ async def rank(ctx):
     imge = Image.open(BytesIO(response.content))
     imge = imge.resize((100, 100))
     img = Image.new("RGB", (400, 200), color=(73, 80, 87))
-    img.paste(imge, (390, 10))
+    img.paste(imge, (300, 10))
     draw = ImageDraw.Draw(img)
     font = ImageFont.truetype("arial.ttf", 36)
     draw.text((10, 10), f"Level: {level}", font=font, fill=(255, 255, 255))
