@@ -308,8 +308,35 @@ async def meme(ctx):
                             [random.randint(0, 25)]['data']['url'])
 
             await ctx.respond(embed=embed)
+@client.slash_command(name="test", description="Get a random meme from reddit")
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def test(ctx):
+    api_url = "https://www.reddit.com/r/memes/top.json?sort=top&t=week&limit=100"
+    response = requests.get(api_url, headers={'User-agent': 'Mozilla/5.0'})
+    data = json.loads(response.text)
+    memes = data["data"]["children"]
+    meme = memes[0]["data"]["url"]
 
+    message = await ctx.send(embed=discord.Embed(title="Meme of the Week", color=0x000000).set_image(url=meme))
 
+    def check(reaction, user):
+        return user == ctx.author and str(reaction.emoji) == '➡️'
+
+    await message.add_reaction('➡️')
+
+    while True:
+        try:
+            reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=check)
+        except asyncio.TimeoutError:
+            await message.clear_reactions()
+            break
+        else:
+            index = memes.index(meme)
+            index += 1
+            if index >= len(memes):
+                index = 0
+            meme = memes[index]["data"]["url"]
+            await message.edit(embed=discord.Embed(title="Meme of the Week", color=0x000000).set_image(url=meme))
 @client.slash_command(name="website-status", description="Check the status of a website")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def website_status(ctx, url: str):
