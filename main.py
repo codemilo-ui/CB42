@@ -51,6 +51,9 @@ async def on_ready():
     await client.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="Slash Commands!"))
     print(f"{client.user.name} says, Hello world")
 
+for filename in os.listdir('./cogs'):
+    if filename.endswith('.py'):
+        client.load_extension(f'cogs.{filename[:-3]}')
 
 async def status():
     await client.wait_until_ready()
@@ -272,71 +275,6 @@ async def ping(ctx):
     l = round(client.latency * 1000, 1)
     await ctx.respond(f"The bots ping is: `{l}`", ephemeral=True)
 
-
-@client.slash_command(name="fact", description="Get a random fact")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def fact(ctx):
-    await ctx.respond(get_fact(), ephemeral=True)
-
-
-@client.slash_command(name="topic", description="Get a random topic")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def topic(ctx):
-
-    await ctx.respond(get_topic(), ephemeral=True)
-
-
-@client.slash_command(name="showerthough", description="Get a random showerthought from reddit")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def showerthought(ctx):
-    shower = get_shower()
-    thought = shower[0]
-    author = shower[1]
-    embed = discord.Embed(title=f"{thought}\n  {author}")
-    await ctx.respond(embed=embed, ephemeral=True)
-
-
-@client.slash_command(name="meme", description="Get a random meme from reddit")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def meme(ctx):
-    embed = discord.Embed(title="Meme")
-
-    async with aiohttp.ClientSession() as cs:
-        async with cs.get('https://www.reddit.com/r/memes/top.json?sort=top&t=week&limit=100') as r:
-            res = await r.json()
-            embed.set_image(url=res['data']['children']
-                            [random.randint(0, 25)]['data']['url'])
-
-            await ctx.respond(embed=embed)
-@client.slash_command(name="test", description="Get a random meme from reddit")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def test(ctx):
-    api_url = "https://www.reddit.com/r/memes/top.json?sort=top&t=week&limit=100"
-    response = requests.get(api_url, headers={'User-agent': 'Mozilla/5.0'})
-    data = json.loads(response.text)
-    memes = data["data"]["children"]
-    meme = memes[0]["data"]["url"]
-
-    message = await ctx.send(embed=discord.Embed(title="Meme of the Week", color=0x000000).set_image(url=meme))
-
-    def check(reaction, user):
-        return user == ctx.author and str(reaction.emoji) == '➡️'
-
-    await message.add_reaction('➡️')
-
-    while True:
-        try:
-            reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=check)
-        except asyncio.TimeoutError:
-            await message.clear_reactions()
-            break
-        else:
-            index = memes.index(meme)
-            index += 1
-            if index >= len(memes):
-                index = 0
-            meme = memes[index]["data"]["url"]
-            await message.edit(embed=discord.Embed(title="Meme of the Week", color=0x000000).set_image(url=meme))
 @client.slash_command(name="website-status", description="Check the status of a website")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def website_status(ctx, url: str):
@@ -366,44 +304,6 @@ async def membercount(ctx):
                           description=f"**This server has** `{guild.member_count}` **members**")
 
     await ctx.respond(embed=embed)
-
-
-@client.slash_command(name="dog", description="Get a random dog pic")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def dog(ctx):
-    async with aiohttp.ClientSession() as session:
-        request = await session.get('https://some-random-api.ml/img/dog')
-        dogjson = await request.json()
-    embed = discord.Embed(title="Dog!")
-    embed.set_image(url=dogjson['link'])
-
-    await ctx.respond(embed=embed)
-
-
-@client.slash_command(name="cat", description="Get a random cat pic")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def cat(ctx):
-    async with aiohttp.ClientSession() as session:
-        request = await session.get('https://some-random-api.ml/img/cat')
-        dogjson = await request.json()
-    embed = discord.Embed(title="Cat!")
-    embed.set_image(url=dogjson['link'])
-
-    await ctx.respond(embed=embed)
-
-
-@client.slash_command(name="dice", description="Get a random number form 1 to 6")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def dice(ctx):
-    num = [
-        '1',
-        '2',
-        '3',
-        '4',
-        '5',
-        '6']
-    await ctx.respond(f"Your random number is: {random.choice(num)}", ephemeral=True)
-
 
 async def kick_user(ctx, member, reason):
     await member.kick(reason=reason)
