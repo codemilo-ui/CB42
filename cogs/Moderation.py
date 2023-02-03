@@ -1,6 +1,7 @@
 import discord
+from discord import *
 from discord.ext import commands
-from discord.commands import slash_command
+from discord.ext.commands import *
 from discord.ui import *
 from defs import *
 
@@ -8,6 +9,71 @@ from defs import *
 class Moderation(commands.Cog):
     def __init__(self, client):
         self.client = client
+
+    @commands.command(name='mute', description="mutes a member")
+    @commands.has_permissions(kick_members=True)
+    @option("user", discord.Member, description="Whom you want mute?")
+    @option("duration", description="How long they should be muted?")
+    @option("duration_type", description="How long should they be muted?", choices=["Seconds", "Hours", "Days"])
+    @option("reason", description="Why do you want mute this member?", default=None)
+    async def mute_command(self, ctx, user: discord.Member, duration: int, duration_type: str, reason: str):
+        if user.id == ctx.author.id:
+            await ctx.respond(embed=discord.Embed(description=f"*You can't timeout yourself*"))
+            return
+        if reason == None:
+            reason = "Not Provided"
+        if duration_type == "Hours":
+            time = int(duration)*3600
+        elif duration_type == "Days":
+            time = int(duration)*86400
+        elif duration_type == "Seconds":
+            time = int(duration)
+        responce_check = await timeout_user(ctx, user, reason, time)
+        if responce_check == True:
+            timeout_embed = discord.Embed(
+                description=f"*`{user}` has been timeout by `{ctx.author}`*")
+            timeout_embed.set_footer(text=f"Reason: {reason}")
+            await ctx.respond(embed=timeout_embed)
+
+    @commands.command(name="purge", descripton="Clears the amount of messages specified")
+    @has_permissions(manage_messages=True)
+    @cooldown(1, 5, BucketType.user)
+    async def purge(self, ctx, amount: Option(int, required=True)):
+        t = ctx.channel.id
+        if amount > 101:
+            await ctx.respond("Not allowed to clear these many messages, please try a number below 100", ephemeral=True)
+        else:
+            z = await ctx.channel.purge(limit=amount)
+            await ctx.respond(f"**Cleared** `{len(z)}` **messages in** <#{t}>", delete_after=5)
+
+    @commands.command(name="slowmode", description="Change/set the slowmode of a channel")
+    @cooldown(1, 5, BucketType.user)
+    @has_permissions(manage_channels=True)
+    async def slowmode(self, ctx, seconds: Option(int, required=True)):
+        t = ctx.channel.id
+        await ctx.channel.edit(slowmode_delay=seconds)
+        await ctx.respond(f"**Set the slowmode for <#{t}> as** `{seconds}` **seconds** ✅", delete_after=5)
+
+    @commands.command(name="removerole", description="Remove a role from a discord member")
+    @has_permissions(manage_roles=True)
+    @cooldown(1, 5, BucketType.user)
+    async def removerole(self, ctx, user: discord.Member, *, role: discord.Role):
+        await user.remove_roles(role)
+        await ctx.respond(f"Removed {role} from {user.mention}")
+
+    @commands.command(name="unban", description="Unban a member using their USER-ID")
+    @has_permissions(ban_members=True)
+    @cooldown(1, 5, BucketType.user)
+    async def unban(self, ctx, id: Option(required=True)):
+        user = await self.client.fetch_user(id)
+        await ctx.guild.unban(user)
+        await ctx.respond(f'Unbanned {user.mention}')
+
+    @commands.command(name="addrole", description="Add a role to a discord member")
+    @has_permissions(manage_roles=True)
+    async def addrole(self, ctx, user: discord.Member, *, role: discord.Role):
+        await user.add_roles(role)
+        await ctx.respond(f"Added {role} to {user.mention}")
 
     @slash_command(description="Kick a member from the server")
     @commands.has_permissions(kick_members=True)

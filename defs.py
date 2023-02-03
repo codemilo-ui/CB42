@@ -1,4 +1,11 @@
 import random, randfacts, json, requests, string
+from datetime import *
+from datetime import timedelta
+import aiohttp
+import discord
+from discord import *
+from discord.ext import commands
+from discord.ext.commands import *
 topics = ["What's your favorite quote",
 			"Think of something your own", 
 			"What's your Favorite band", 
@@ -40,7 +47,18 @@ async def kick_user(ctx, member, reason):
 async def ban_user(ctx, member, reason):
     await member.ban(reason=reason)
     return True
-    
+
+async def timeout_user(ctx, member, reason, timeouttime):
+    duration = timedelta(seconds=timeouttime)
+    try:
+        await member.timeout_for(duration, reason=reason)
+    except HTTPException:
+        await ctx.reply(
+            'I failed to Timeout this member due to a Discord Server error'
+        )
+        return False
+    return True
+
 # def get_shower():
 # 	data = requests.get('https://www.reddit.com/r/showerthoughts/top.json?sort=top&t=week&limit=100')
 
