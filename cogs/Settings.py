@@ -43,3 +43,6 @@ class Settings(commands.Cog):
             embed = discord.Embed(
                 title="Anti-swear filter disabled", color=0x000000)
             await ctx.respond(embed=embed)
+
+def setup(client):
+    client.add_cog(Settings(client))
