@@ -305,16 +305,6 @@ async def membercount(ctx):
 
     await ctx.respond(embed=embed)
 
-async def kick_user(ctx, member, reason):
-    await member.kick(reason=reason)
-    return True
-
-
-async def ban_user(ctx, member, reason):
-    await member.ban(reason=reason)
-    return True
-
-
 @client.slash_command(name="set-welcome-channel", description="Set the welcome channel")
 @commands.has_permissions(kick_members=True)
 async def setwelcomechannel(ctx, channel: discord.TextChannel):
@@ -352,110 +342,6 @@ async def avatar(ctx, member: discord.Member = None):
         title=f"Avatar of {member.name}#{member.discriminator}")
     embed.set_image(url=ava)
     await ctx.respond(embed=embed, ephemeral=True)
-
-
-@client.slash_command(description="Kick a member from the server")
-@commands.has_permissions(kick_members=True)
-async def kick(ctx, user: discord.Option(discord.Member, description="Please select a user to kick", required=True), reason: discord.Option(str, description="Why do you want to kick?", required=False)):
-    if user.id == ctx.author.id:
-        await ctx.respond(embed=discord.Embed(description=f"*You can't kick yourself*", color=discord.Color.red()))
-        return
-    kick_embed = discord.Embed(
-        description=f"*Please confirm to kick {user}*", color=discord.Color.blurple())
-    confirm = Button(label="Confirm", style=discord.ButtonStyle.green)
-    cancel = Button(label="Cancel", style=discord.ButtonStyle.red)
-    view = View()
-    view.add_item(confirm)
-    view.add_item(cancel)
-
-    async def button_callback(interaction):
-        member = interaction.user
-        if not member.id == ctx.author.id:
-            return
-        button1 = Button(
-            label="Confirm", style=discord.ButtonStyle.green, disabled=True)
-        button3 = Button(
-            label="Cancel", style=discord.ButtonStyle.gray, disabled=True)
-        view1 = View()
-        view1.add_item(button1)
-        view1.add_item(button3)
-        responce_get = await kick_user(ctx, user, reason=reason)
-        if responce_get == True:
-            confirm_kick = discord.Embed(
-                description=f"{user} *has beeen kicked by* `{ctx.author}`", color=discord.Color.green())
-            await interaction.response.edit_message(embed=confirm_kick, view=view1)
-        else:
-            pass
-
-    async def button2_callback(interaction):
-        member = interaction.user
-        if not member.id == ctx.author.id:
-            return
-        button1 = Button(
-            label="Confirm", style=discord.ButtonStyle.gray, disabled=True)
-        button3 = Button(
-            label="Cancel", style=discord.ButtonStyle.green, disabled=True)
-        view1 = View()
-        view1.add_item(button1)
-        view1.add_item(button3)
-        cancel_kick = discord.Embed(
-            description=f"Command has stopped.", color=discord.Color.green())
-        await interaction.response.edit_message(embed=cancel_kick, view=view1)
-    await ctx.respond(embed=kick_embed, view=view)
-    confirm.callback = button_callback
-    cancel.callback = button2_callback
-
-
-@client.slash_command(description="Ban a member from the server")
-@commands.has_permissions(ban_members=True)
-async def ban(ctx, user: discord.Option(discord.Member, description="Please select a user to ban", required=True), reason: discord.Option(str, description="Why do you want to ban?", required=False)):
-    if user.id == ctx.author.id:
-        await ctx.respond(embed=discord.Embed(description=f"*You can't ban yourself*", color=discord.Color.red()))
-        return
-    ban_embed = discord.Embed(
-        description=f"*Please confirm to ban {user}*", color=discord.Color.blurple())
-    confirm = Button(label="Confirm", style=discord.ButtonStyle.green)
-    cancel = Button(label="Cancel", style=discord.ButtonStyle.red)
-    view = View()
-    view.add_item(confirm)
-    view.add_item(cancel)
-
-    async def button_callback(interaction):
-        member = interaction.user
-        if not member.id == ctx.author.id:
-            return
-        button1 = Button(
-            label="Confirm", style=discord.ButtonStyle.green, disabled=True)
-        button3 = Button(
-            label="Cancel", style=discord.ButtonStyle.gray, disabled=True)
-        view1 = View()
-        view1.add_item(button1)
-        view1.add_item(button3)
-        responce_get = await ban_user(ctx, user, reason=reason)
-        if responce_get == True:
-            confirm_ban = discord.Embed(
-                description=f"{user} *has beeen banned by* `{ctx.author}`", color=discord.Color.green())
-            await interaction.response.edit_message(embed=confirm_ban, view=view1)
-        else:
-            pass
-
-    async def button2_callback(interaction):
-        member = interaction.user
-        if not member.id == ctx.author.id:
-            return
-        button1 = Button(
-            label="Confirm", style=discord.ButtonStyle.gray, disabled=True)
-        button3 = Button(
-            label="Cancel", style=discord.ButtonStyle.green, disabled=True)
-        view1 = View()
-        view1.add_item(button1)
-        view1.add_item(button3)
-        cancel_ban = discord.Embed(
-            description=f"Command has stopped.", color=discord.Color.green())
-        await interaction.response.edit_message(embed=cancel_ban, view=view1)
-    await ctx.respond(embed=ban_embed, view=view)
-    confirm.callback = button_callback
-    cancel.callback = button2_callback
 
 @client.slash_command(name="invite", description="Invite CB42 to your server")
 @commands.cooldown(1, 5, commands.BucketType.user)

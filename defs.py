@@ -32,6 +32,15 @@ def in_list(str_, list_):
                 return True
     return False
 
+async def kick_user(ctx, member, reason):
+    await member.kick(reason=reason)
+    return True
+
+
+async def ban_user(ctx, member, reason):
+    await member.ban(reason=reason)
+    return True
+    
 # def get_shower():
 # 	data = requests.get('https://www.reddit.com/r/showerthoughts/top.json?sort=top&t=week&limit=100')
 
