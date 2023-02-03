@@ -197,19 +197,6 @@ class DropDownMenu(discord.ui.View):
 
 # SLASH
 
-
-async def timeout_user(ctx, member, reason, timeouttime):
-    duration = timedelta(seconds=timeouttime)
-    try:
-        await member.timeout_for(duration, reason=reason)
-    except HTTPException:
-        await ctx.reply(
-            'I failed to Timeout this member due to a Discord Server error'
-        )
-        return False
-    return True
-
-
 @client.slash_command(name="google", description="Google something...")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def google(ctx, query: Option(str)):
@@ -218,40 +205,6 @@ async def google(ctx, query: Option(str)):
     for j in search(query, num_results=4):
         embed.add_field(name="Search result:", value=j)
     await msg.edit(embed=embed)
-
-
-@client.slash_command(description="mutes a member")
-@commands.has_permissions(kick_members=True)
-@option("user", discord.Member, description="Whom you want mute?")
-@option("duration", description="How long they should be muted?")
-@option("duration_type", description="How long should they be muted?", choices=["Seconds", "Hours", "Days"])
-@option("reason", description="Why do you want mute this member?", default=None)
-async def mute(ctx, user: discord.Member, duration: int, duration_type: str, reason: str):
-    if user.id == ctx.author.id:
-        await ctx.respond(embed=discord.Embed(description=f"*You can't timeout yourself*"))
-        return
-    if reason == None:
-        reason = "Not Provided"
-    if duration_type == "Hours":
-        time = int(duration)*3600
-    elif duration_type == "Days":
-        time = int(duration)*86400
-    elif duration_type == "Seconds":
-        time = int(duration)
-    responce_check = await timeout_user(ctx, user, reason, time)
-    if responce_check == True:
-        timeout_embed = discord.Embed(
-            description=f"*`{user}` has been timeout by `{ctx.author}`*")
-        timeout_embed.set_footer(text=f"Reason: {reason}")
-        await ctx.respond(embed=timeout_embed)
-
-
-@client.slash_command(name='unmute', description="Unmutes the member")
-@commands.has_permissions(moderate_members=True)
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def unmute(ctx, member: Option(discord.Member, required=True)):
-    await member.remove_timeout()
-    await ctx.respond(f"<@{member.id}> has been unmuted by <@{ctx.author.id}>.")
 
 @client.slash_command(name="help", description="Get all the commands of the bot")
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -382,52 +335,6 @@ async def password(ctx):
     await ctx.respond("Check your DM's‼", ephemeral=True)
     await ctx.author.send(f"Your secret password is: `{am}`")
 
-
-@client.slash_command(name="unban", description="Unban a member using their USER-ID")
-@commands.has_permissions(ban_members=True)
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def unban(ctx, id: Option(required=True)):
-    user = await client.fetch_user(id)
-    await ctx.guild.unban(user)
-    await ctx.respond(f'Unbanned {user.mention}')
-
-
-@client.slash_command(name="addrole", description="Add a role to a discord member")
-@commands.has_permissions(manage_roles=True)
-async def addrole(ctx, user: discord.Member, *, role: discord.Role):
-    await user.add_roles(role)
-    await ctx.respond(f"Added {role} to {user.mention}")
-
-
-@client.slash_command(name="removerole", description="Remove a role from a discord member")
-@commands.has_permissions(manage_roles=True)
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def removerole(ctx, user: discord.Member, *, role: discord.Role):
-    await user.remove_roles(role)
-    await ctx.respond(f"Removed {role} from {user.mention}")
-
-
-@client.slash_command(name="purge", descripton="Clears the amount of messages specified")
-@commands.has_permissions(manage_messages=True)
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def purge(ctx, amount: Option(int, required=True)):
-    t = ctx.channel.id
-    if amount > 101:
-        await ctx.respond("Not allowed to clear these many messages, please try a number below 100", ephemeral=True)
-    else:
-        z = await ctx.channel.purge(limit=amount)
-        await ctx.respond(f"**Cleared** `{len(z)}` **messages in** <#{t}>", delete_after=5)
-
-
-@client.slash_command(name="slowmode", description="Change/set the slowmode of a channel")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.has_permissions(manage_channels=True)
-async def slowmode(ctx, seconds: Option(int, required=True)):
-    t = ctx.channel.id
-    await ctx.channel.edit(slowmode_delay=seconds)
-    await ctx.respond(f"**Set the slowmode for <#{t}> as** `{seconds}` **seconds** ✅", delete_after=5)
-
-
 @client.slash_command(name="rank", description="Shows the rank of a user")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def rank(ctx):
@@ -455,41 +362,6 @@ async def rank(ctx):
     with open("rank.png", "rb") as f:
         await ctx.respond(file=discord.File(f))
 
-
-@client.slash_command(name="eightball", description="Ask some questions!")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def eightball(ctx, *, question):
-    responses = [
-        'Hell no.',
-        'Prolly not.',
-        'Idk bro.',
-        'Prolly.',
-        'Hell yeah my dude.',
-        'It is certain.',
-        'It is decidedly so.',
-        'Without a Doubt.',
-        'Yes - Definitely.',
-        'You may rely on it.',
-        'As i see it, Yes.',
-        'Most Likely.',
-        'Outlook Good.',
-        'Yes!',
-        'No!',
-        'Signs a point to Yes!',
-        'Reply Hazy, Try again.',
-        'Better not tell you know.',
-        'Cannot predict now.',
-        'Concentrate and ask again.',
-        "Don't Count on it.",
-        'My reply is No.',
-        'My sources say No.',
-        'Outlook not so good.',
-        'Very Doubtful']
-    eightbembed = discord.Embed(
-        title=f"{question}", description=f"{random.choice(responses)}")
-    await ctx.respond(embed=eightbembed)
-
-
 @client.slash_command(name="uptime", description="Check how long CB42 has been up for")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def uptime(ctx):
@@ -501,60 +373,6 @@ async def uptime(ctx):
                           description=f"`CB42 has been online for -` {days}d, {hours}h, {minutes}m, {seconds}s")
 
     await ctx.respond(embed=embed, ephemeral=True)
-
-@client.slash_command(name="toggle-swear", description="Turn the swear filter on and off")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.has_permissions(ban_members=True)
-async def toggle_swear(ctx, status: discord.Option(str, required=True, choices=['Enabled', 'Disabled'])):
-    settings = swear[str(ctx.guild.id)].find_one({"guild_id": ctx.guild.id})
-    filter_enabled = settings["filter_enabled"]
-
-    if status == "Enabled":
-        filter_enabled = True
-    elif status == "Disabled":
-        filter_enabled = False
-    else:
-        return await ctx.respond("Invalid status. Use `Enable` or `Disable`.", ephemeral=True)
-
-    swear[str(ctx.guild.id)].update_one({"guild_id": ctx.guild.id}, {"$set": {"filter_enabled": filter_enabled}})
-    if filter_enabled:
-        embed = Embed(title="Anti-swear filter enabled", color=0x000000)
-        await ctx.respond(embed=embed)
-    else:
-        embed = Embed(title="Anti-swear filter disabled", color=0x000000)
-        await ctx.respond(embed=embed)
-
-@client.slash_command(name="toggle-anti-bot", description="Turn the swear filter on and off")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.has_permissions(ban_members=True)
-async def antibot(ctx, option=None):
-    guild_id = str(ctx.guild.id)
-    guild_settings = antibot.find_one({"guild_id": guild_id})
-    if guild_settings:
-        if option == "Enabled":
-            antibot.update_one({"guild_id": guild_id}, {"$set": {"anti_bot": True}})
-            embed = discord.Embed(title="Anti-Bot Setting", description="Anti-Bot setting updated to Enabled", color=0x000000)
-            await ctx.respond(embed=embed)
-        elif option == "Disabled":
-            antibot.update_one({"guild_id": guild_id}, {"$set": {"anti_bot": False}})
-            embed = discord.Embed(title="Anti-Bot Setting", description="Anti-Bot setting updated to Disabled", color=0x000000)
-            await ctx.respond(embed=embed)
-        else:
-            embed = discord.Embed(title="Anti-Bot Setting", description="Invalid option, use `Enabled` or `Disabled`", color=0x000000)
-            await ctx.respond(embed=embed)
-    else:
-        if option == "Enabled":
-            antibot.insert_one({"guild_id": guild_id, "anti_bot": True})
-            embed = discord.Embed(title="Anti-Bot Setting", description="Anti-Bot setting updated to Enabled", color=0x000000)
-            await ctx.respond(embed=embed)
-        elif option == "Disabled":
-            antibot.insert_one({"guild_id": guild_id, "anti_bot": False})
-            embed = discord.Embed(title="Anti-Bot Setting", description="Anti-Bot setting updated to Disabled", color=0x000000)
-            await ctx.respond(embed=embed)
-        else:
-            embed = discord.Embed(title="Anti-Bot Setting", description="Invalid option, use `Enabled` or `Disabled`", color=0x000000)
-            await ctx.respond(embed=embed)
-
 
 # SLASH
 
