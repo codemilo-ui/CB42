@@ -55,6 +55,7 @@ for filename in os.listdir('./cogs'):
     if filename.endswith('.py'):
         client.load_extension(f'cogs.{filename[:-3]}')
 
+
 async def status():
     await client.wait_until_ready()
 
@@ -88,7 +89,8 @@ def update_leave_channel_id(server_id, channel_id):
 
 async def send_welcome_message(member):
     server_id = member.guild.id
-    channel_id = get_welcome_channel_id(server_id)
+    channel_id = wel.settings.find_one(
+        {"server_id": server_id, "name": "welcome_channel"})["channel_id"]
 
     channel = client.get_channel(channel_id)
 
@@ -101,7 +103,8 @@ async def send_welcome_message(member):
 
 async def send_leave_message(member):
     server_id = member.guild.id
-    channel_id = get_leave_channel_id(server_id)
+    channel_id = lev.settings.find_one(
+        {"server_id": server_id, "name": "leave_channel"})["channel_id"]
 
     channel = client.get_channel(channel_id)
 
@@ -113,7 +116,8 @@ async def send_leave_message(member):
 
 @client.event
 async def on_guild_join(guild):
-    swear[str(guild.id)].insert_one({"guild_id": guild.id, "filter_enabled": False})
+    swear[str(guild.id)].insert_one(
+        {"guild_id": guild.id, "filter_enabled": False})
 
 
 @client.event
@@ -199,14 +203,17 @@ class DropDownMenu(discord.ui.View):
 
 # SLASH
 
+
 @client.slash_command(name="google", description="Google something...")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def google(ctx, query: Option(str)):
     msg = await ctx.respond(f"Searching...🔍")
-    embed = discord.Embed(title=f"Search results", description=f"Query: {query}")
+    embed = discord.Embed(title=f"Search results",
+                          description=f"Query: {query}")
     for j in search(query, num_results=4):
         embed.add_field(name="Search result:", value=j)
     await msg.edit(embed=embed)
+
 
 @client.slash_command(name="help", description="Get all the commands of the bot")
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -229,6 +236,7 @@ async def help(ctx):
 async def ping(ctx):
     l = round(client.latency * 1000, 1)
     await ctx.respond(f"The bots ping is: `{l}`", ephemeral=True)
+
 
 @client.slash_command(name="website-status", description="Check the status of a website")
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -260,10 +268,12 @@ async def membercount(ctx):
 
     await ctx.respond(embed=embed)
 
+
 @client.slash_command(name="set-welcome-channel", description="Set the welcome channel")
 @commands.has_permissions(kick_members=True)
 async def setwelcomechannel(ctx, channel: discord.TextChannel):
-    existing_channel = wel.settings.find_one({"server_id": ctx.guild.id, "name": "welcome_channel"})
+    existing_channel = wel.settings.find_one(
+        {"server_id": ctx.guild.id, "name": "welcome_channel"})
     if existing_channel is None:
         wel.settings.insert_one(
             {"server_id": ctx.guild.id, "name": "welcome_channel", "channel_id": channel.id})
@@ -276,7 +286,8 @@ async def setwelcomechannel(ctx, channel: discord.TextChannel):
 @client.slash_command(name="set-leave-channel", description="Set the leave channel")
 @commands.has_permissions(kick_members=True)
 async def setleavechannel(ctx, channel: discord.TextChannel):
-    existing_channel = lev.settings.find_one({"server_id": ctx.guild.id, "name": "leave_channel"})
+    existing_channel = lev.settings.find_one(
+        {"server_id": ctx.guild.id, "name": "leave_channel"})
     if existing_channel is None:
         lev.settings.insert_one(
             {"server_id": ctx.guild.id, "name": "leave_channel", "channel_id": channel.id})
@@ -297,6 +308,7 @@ async def avatar(ctx, member: discord.Member = None):
         title=f"Avatar of {member.name}#{member.discriminator}")
     embed.set_image(url=ava)
     await ctx.respond(embed=embed, ephemeral=True)
+
 
 @client.slash_command(name="invite", description="Invite CB42 to your server")
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -337,6 +349,7 @@ async def password(ctx):
     await ctx.respond("Check your DM's‼", ephemeral=True)
     await ctx.author.send(f"Your secret password is: `{am}`")
 
+
 @client.slash_command(name="rank", description="Shows the rank of a user")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def rank(ctx):
@@ -363,6 +376,7 @@ async def rank(ctx):
     img.save("rank.png")
     with open("rank.png", "rb") as f:
         await ctx.respond(file=discord.File(f))
+
 
 @client.slash_command(name="uptime", description="Check how long CB42 has been up for")
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -437,7 +451,8 @@ async def on_message(message):
     if filter_enabled:
         if any(word in message.content.lower() for word in bad_words):
             await message.delete()
-            embed = Embed(title="Inappropriate language detected", description="Your message contained inappropriate language.", color=0x000000, delete_after=3)
+            embed = Embed(title="Inappropriate language detected",
+                          description="Your message contained inappropriate language.", color=0x000000, delete_after=3)
             await message.channel.send(embed=embed)
     message.content = message.content.lower()
     await client.process_commands(message)
