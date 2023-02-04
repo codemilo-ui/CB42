@@ -22,7 +22,7 @@ from googlesearch import search
 from PIL import Image, ImageDraw, ImageFont
 from pymongo import MongoClient
 
-from badwords import *
+from database.badwords import *
 from defs import *
 
 load_dotenv()
@@ -137,7 +137,7 @@ async def rank(ctx):
     img = Image.new("RGB", (400, 200), color=(73, 80, 87))
     img.paste(imge, (290, 10))
     draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype("arial.ttf", 36)
+    font = ImageFont.truetype("./assets/arial.ttf", 36)
     draw.text((10, 10), f"Level: {level}", font=font, fill=(255, 255, 255))
     draw.text((10, 130), "XP", font=font, fill=(255, 255, 255))
     draw.rectangle([(10, 170), (10 + xp * 0.3, 190)], fill=(247, 134, 28))
@@ -145,19 +145,6 @@ async def rank(ctx):
     img.save("rank.png")
     with open("rank.png", "rb") as f:
         await ctx.respond(file=discord.File(f))
-
-
-@client.slash_command(name="uptime", description="Check how long CB42 has been up for")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def uptime(ctx):
-    delta_uptime = datetime.utcnow() - client.launch_time
-    hours, remainder = divmod(int(delta_uptime.total_seconds()), 3600)
-    minutes, seconds = divmod(remainder, 60)
-    days, hours = divmod(hours, 24)
-    embed = discord.Embed(title="**CB42's Uptime**",
-                          description=f"`CB42 has been online for -` {days}d, {hours}h, {minutes}m, {seconds}s")
-
-    await ctx.respond(embed=embed, ephemeral=True)
 
 # SLASH
 

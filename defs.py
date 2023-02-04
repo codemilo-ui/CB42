@@ -126,13 +126,13 @@ async def send_leave_message(member):
 
 
 def get_shower():
-    with open("data.json", "r", encoding="utf-8") as f:
+    with open("./database/data.json", "r", encoding="utf-8") as f:
         data = json.load(f)
         return random.choice(data["thoughts"])
 
 
 async def scam_check(message):
-    with open('blocked_links.json', 'r') as f1:
+    with open('./database/blocked_links.json', 'r') as f1:
         scam_links = json.load(f1)
     scam_links = scam_links['domains']
     for links in scam_links:
