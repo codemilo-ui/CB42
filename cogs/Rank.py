@@ -4,6 +4,7 @@ from io import BytesIO
 import certifi
 import discord
 import pymongo
+import operator
 import requests
 from discord import *
 from discord.ext import commands
@@ -49,6 +50,19 @@ class Rank(commands.Cog):
         with open("rank.png", "rb") as f:
             await ctx.respond(file=discord.File(f))
 
+    @slash_command(name="leaderboard", description="Shows the XP leaderboard of all users who use the bot")
+    @cooldown(1, 5, commands.BucketType.user)
+    async def leaderboard(self, ctx):
+        levels = collection.find()
+        leaderboard = {}
+        for level in levels:
+            leaderboard[level["_id"]] = level["XP"]
+        sorted_leaderboard = sorted(leaderboard.items(), key=operator.itemgetter(1), reverse=True)
+        embed = discord.Embed(title="XP Leaderboard", description="Top 10 users with the highest XP")
+        for i in range(10):
+            user = self.client.get_user(sorted_leaderboard[i][0])
+            embed.add_field(name=f"{i + 1}. {user.name}", value=sorted_leaderboard[i][1], inline=False)
+        await ctx.respond(embed=embed)
 
 def setup(client):
     client.add_cog(Rank(client))
