@@ -66,7 +66,7 @@ class Information(commands.Cog):
             title=f"**Developers of CB42**",
             description=f"**CB42 was made by** [adzsx](https://github.com/adzsx) **and** [codemilo-ui](https://github.com/codemilo-ui)"
         )
-        embed.add_field(name="Source Code", value="You can find the source code of CB42 here - https://github.com/codemilo-ui/CB42", inline=True)
+        embed.add_field(name="Source Code", value="You can find the source code of CB42 here - https://github.com/codemilo-ui/CB42", inline=False)
         embed.set_thumbnail(url=self.bot.user.avatar_url)
         await ctx.respond(embed=embed)
 
