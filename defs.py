@@ -142,6 +142,16 @@ async def scam_check(message):
 
 
 class DropDownMenu(discord.ui.View):
+    def __init__(self, client, timeout=1):
+        self.client = client
+        super().__init__(timeout=timeout)
+
+        self.add_item(DropDownMenu(self.client))
+
+    async def on_timeout(self):
+        print("test")
+        self.clear_items()
+
     @discord.ui.select(placeholder="Select a value", min_values=1, max_values=1, options=[
         discord.SelectOption(label="Moderation",
                              description="Moderation commands", emoji="🚩"),
