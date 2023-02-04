@@ -22,7 +22,7 @@ class Help(commands.Cog):
         embed.set_image(
             url="https://cdn.discordapp.com/attachments/943039554108133378/1005764186485305345/standard.gif")
 
-        dropdowns = DropDownMenu(timeout=30)
+        dropdowns = DropDownMenu(timeout=60)
 
         await ctx.respond(embed=embed, view=dropdowns)
 
