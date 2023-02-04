@@ -68,21 +68,21 @@ async def status():
         await asyncio.sleep(10)
 
 
-def get_welcome_channel_id():
-    return wel.settings.find_one({"name": "welcome_channel"})["channel_id"]
+def get_welcome_channel_id(server_id):
+    return wel.settings.find_one({"server_id": server_id, "name": "welcome_channel"})["channel_id"]
 
 
-def get_leave_channel_id():
-    return lev.settings.find_one({"name": "leave_channel"})["channel_id"]
+def get_leave_channel_id(server_id):
+    return lev.settings.find_one({"server_id": server_id, "name": "leave_channel"})["channel_id"]
 
 
-def update_welcome_channel_id(channel_id):
-    wel.settings.update_one({"name": "welcome_channel"}, {
+def update_welcome_channel_id(server_id, channel_id):
+    wel.settings.update_one({"server_id": server_id, "name": "welcome_channel"}, {
                             "$set": {"channel_id": channel_id}})
 
 
-def update_leave_channel_id(channel_id):
-    lev.settings.update_one({"name": "leave_channel"}, {
+def update_leave_channel_id(server_id, channel_id):
+    lev.settings.update_one({"server_id": server_id, "name": "leave_channel"}, {
                             "$set": {"channel_id": channel_id}})
 
 
@@ -261,12 +261,12 @@ async def membercount(ctx):
 @client.slash_command(name="set-welcome-channel", description="Set the welcome channel")
 @commands.has_permissions(kick_members=True)
 async def setwelcomechannel(ctx, channel: discord.TextChannel):
-    existing_channel = wel.settings.find_one({"name": "welcome_channel"})
+    existing_channel = wel.settings.find_one({"server_id": ctx.guild.id, "name": "welcome_channel"})
     if existing_channel is None:
         wel.settings.insert_one(
-            {"name": "welcome_channel", "channel_id": channel.id})
+            {"server_id": ctx.guild.id, "name": "welcome_channel", "channel_id": channel.id})
     else:
-        wel.settings.update_one({"name": "welcome_channel"}, {
+        wel.settings.update_one({"server_id": ctx.guild.id, "name": "welcome_channel"}, {
                                 "$set": {"channel_id": channel.id}})
     await ctx.respond(f"The designated channel has been set to {channel.mention}.")
 
@@ -274,12 +274,12 @@ async def setwelcomechannel(ctx, channel: discord.TextChannel):
 @client.slash_command(name="set-leave-channel", description="Set the leave channel")
 @commands.has_permissions(kick_members=True)
 async def setleavechannel(ctx, channel: discord.TextChannel):
-    existing_channel = lev.settings.find_one({"name": "leave_channel"})
+    existing_channel = lev.settings.find_one({"server_id": ctx.guild.id, "name": "leave_channel"})
     if existing_channel is None:
         lev.settings.insert_one(
-            {"name": "leave_channel", "channel_id": channel.id})
+            {"server_id": ctx.guild.id, "name": "leave_channel", "channel_id": channel.id})
     else:
-        lev.settings.update_one({"name": "leave_channel"}, {
+        lev.settings.update_one({"server_id": ctx.guild.id, "name": "leave_channel"}, {
                                 "$set": {"channel_id": channel.id}})
     await ctx.respond(f"The designated channel has been set to {channel.mention}.")
 
