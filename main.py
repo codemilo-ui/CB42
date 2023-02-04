@@ -94,7 +94,7 @@ async def send_welcome_message(member):
 
     channel = client.get_channel(channel_id)
 
-    welcome_message = f"Welcome to the server, {member.mention}! We're glad to have you here!"
+    welcome_message = f"Welcome to the server, {member.name}!"
     embed = discord.Embed(title=welcome_message)
     embed.set_thumbnail(url=member.avatar.url)
 
