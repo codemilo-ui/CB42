@@ -140,6 +140,7 @@ async def scam_check(message):
             await message.delete()
             await message.channel.send("You can't send this link! ❌", delete_after=3)
 
+
 class DropDownMenu(discord.ui.View):
     @discord.ui.select(placeholder="Select a value", min_values=1, max_values=1, options=[
         discord.SelectOption(label="Moderation",
@@ -149,6 +150,8 @@ class DropDownMenu(discord.ui.View):
         discord.SelectOption(
             label="Information", description="Information commands", emoji="ℹ"),
         discord.SelectOption(
+            label="Settings", description="Settings commands", emoji=":wrench:"),
+        discord.SelectOption(
             label="Level", description="Level commands", emoji="⬆")
     ])
     async def callback(self, select, interaction: discord.Interaction):
@@ -156,7 +159,7 @@ class DropDownMenu(discord.ui.View):
             view = View()
             modembed = discord.Embed(
                 title="Moderation commands",
-                description="`clear`, `kick`, `ban`, `unban`, `membercount`, `setprefix`, `addrole`, `delrole`, `mute`, `unmute`, `set-welcome-channel`, `set-leave-channel`",
+                description="`mute`, `purge`, `slowmode`, `removerole`, `unban`, `addrole`, `kick`, `ban`",
             )
 
             await interaction.response.send_message(embed=modembed, view=view, ephemeral=True)
@@ -165,7 +168,7 @@ class DropDownMenu(discord.ui.View):
             view = View()
             funembed = discord.Embed(
                 title="Fun commands",
-                description="`cat`, `dog`, `meme`, `showerthought`, `dice`, `password`, `eightball`",
+                description="`dog`, `cat`, `dice`, `eightball`, `meme`, `fact`, `topic`, `showerthought`",
             )
 
             await interaction.response.send_message(embed=funembed, view=view, ephemeral=True)
@@ -174,11 +177,19 @@ class DropDownMenu(discord.ui.View):
             view = View()
             inembed = discord.Embed(
                 title="Information commands",
-                description="`invite`, `ping`, `credits`, `uptime`, `website-status`",
+                description="`uptime`, `ping`, `membercount`, `avatar`, `invite`, `credits`, `help`",
             )
 
             await interaction.response.send_message(embed=inembed, view=view, ephemeral=True)
 
+        if select.values[0] == "Settings":
+            view = View()
+            lnembed = discord.Embed(
+                title="Settings commands",
+                description="`set-welcome-channel`, `set-leave-channel`, `toggle-swear`",
+            )
+
+            await interaction.response.send_message(embed=lnembed, view=view, ephemeral=True)
         if select.values[0] == "Level":
             view = View()
             lnembed = discord.Embed(
@@ -187,6 +198,7 @@ class DropDownMenu(discord.ui.View):
             )
 
             await interaction.response.send_message(embed=lnembed, view=view, ephemeral=True)
+
 
 length = random.randint(12, 25)
 lower = string.ascii_lowercase
