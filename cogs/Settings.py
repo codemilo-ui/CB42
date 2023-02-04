@@ -19,7 +19,7 @@ class Settings(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.command(name="set-welcome-channel", description="Set the welcome channel")
+    @slash_command(name="set-welcome-channel", description="Set the welcome channel")
     @commands.has_permissions(kick_members=True)
     async def setwelcomechannel(self, ctx, channel: discord.TextChannel):
         existing_channel = wel.settings.find_one(
@@ -32,7 +32,7 @@ class Settings(commands.Cog):
                 "$set": {"channel_id": channel.id}})
         await ctx.respond(f"The designated channel has been set to {channel.mention}.")
 
-    @commands.command(name="set-leave-channel", description="Set the leave channel")
+    @slash_command(name="set-leave-channel", description="Set the leave channel")
     @commands.has_permissions(kick_members=True)
     async def setleavechannel(self, ctx, channel: discord.TextChannel):
         existing_channel = lev.settings.find_one(

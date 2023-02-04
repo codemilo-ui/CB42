@@ -10,7 +10,7 @@ class Moderation(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.command(name='mute', description="mutes a member")
+    @slash_command(name='mute', description="mutes a member")
     @commands.has_permissions(kick_members=True)
     @option("user", discord.Member, description="Whom you want mute?")
     @option("duration", description="How long they should be muted?")
@@ -35,7 +35,7 @@ class Moderation(commands.Cog):
             timeout_embed.set_footer(text=f"Reason: {reason}")
             await ctx.respond(embed=timeout_embed)
 
-    @commands.command(name="purge", descripton="Clears the amount of messages specified")
+    @slash_command(name="purge", descripton="Clears the amount of messages specified")
     @has_permissions(manage_messages=True)
     @cooldown(1, 5, BucketType.user)
     async def purge(self, ctx, amount: Option(int, required=True)):
@@ -46,7 +46,7 @@ class Moderation(commands.Cog):
             z = await ctx.channel.purge(limit=amount)
             await ctx.respond(f"**Cleared** `{len(z)}` **messages in** <#{t}>", delete_after=5)
 
-    @commands.command(name="slowmode", description="Change/set the slowmode of a channel")
+    @slash_command(name="slowmode", description="Change/set the slowmode of a channel")
     @cooldown(1, 5, BucketType.user)
     @has_permissions(manage_channels=True)
     async def slowmode(self, ctx, seconds: Option(int, required=True)):
@@ -54,14 +54,14 @@ class Moderation(commands.Cog):
         await ctx.channel.edit(slowmode_delay=seconds)
         await ctx.respond(f"**Set the slowmode for <#{t}> as** `{seconds}` **seconds** ✅", delete_after=5)
 
-    @commands.command(name="removerole", description="Remove a role from a discord member")
+    @slash_command(name="removerole", description="Remove a role from a discord member")
     @has_permissions(manage_roles=True)
     @cooldown(1, 5, BucketType.user)
     async def removerole(self, ctx, user: discord.Member, *, role: discord.Role):
         await user.remove_roles(role)
         await ctx.respond(f"Removed {role} from {user.mention}")
 
-    @commands.command(name="unban", description="Unban a member using their USER-ID")
+    @slash_command(name="unban", description="Unban a member using their USER-ID")
     @has_permissions(ban_members=True)
     @cooldown(1, 5, BucketType.user)
     async def unban(self, ctx, id: Option(required=True)):
@@ -69,7 +69,7 @@ class Moderation(commands.Cog):
         await ctx.guild.unban(user)
         await ctx.respond(f'Unbanned {user.mention}')
 
-    @commands.command(name="addrole", description="Add a role to a discord member")
+    @slash_command(name="addrole", description="Add a role to a discord member")
     @has_permissions(manage_roles=True)
     async def addrole(self, ctx, user: discord.Member, *, role: discord.Role):
         await user.add_roles(role)
