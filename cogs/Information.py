@@ -67,7 +67,7 @@ class Information(commands.Cog):
             description=f"**CB42 was made by** [adzsx](https://github.com/adzsx) **and** [codemilo-ui](https://github.com/codemilo-ui)"
         )
         embed.add_field(name="Source Code", value="You can find the source code of CB42 here - https://github.com/codemilo-ui/CB42", inline=False)
-        embed.set_thumbnail(url=self.bot.user.avatar_url)
+        embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/943453290597875753/1071328608653676625/pfp.png")
         await ctx.respond(embed=embed)
 
 def setup(client):
