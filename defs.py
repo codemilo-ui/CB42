@@ -142,16 +142,11 @@ async def scam_check(message):
 
 
 class DropDownMenu(discord.ui.View):
-    def __init__(self, client, timeout=1):
-        self.client = client
-        super().__init__(timeout=timeout)
-
-        self.add_item(DropDownMenu(self.client))
-
     async def on_timeout(self):
-        print("test")
-        self.clear_items()
-
+        for child in self.children:
+            child.disabled = True
+        await self.message.edit(content="You took too long! Disabled all the components.", view=self)
+        
     @discord.ui.select(placeholder="Select a value", min_values=1, max_values=1, options=[
         discord.SelectOption(label="Moderation",
                              description="Moderation commands", emoji="🚩"),
