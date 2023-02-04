@@ -15,7 +15,7 @@ class Information(commands.Cog):
     @slash_command(name="uptime", description="Check how long CB42 has been up for")
     @cooldown(1, 5, commands.BucketType.user)
     async def uptime(self, ctx):
-        delta_uptime = datetime.utcnow() - self.bot.launch_time
+        delta_uptime = datetime.utcnow() - self.client.launch_time
         hours, remainder = divmod(int(delta_uptime.total_seconds()), 3600)
         minutes, seconds = divmod(remainder, 60)
         days, hours = divmod(hours, 24)
