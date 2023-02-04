@@ -48,3 +48,7 @@ class Rank(commands.Cog):
         img.save("rank.png")
         with open("rank.png", "rb") as f:
             await ctx.respond(file=discord.File(f))
+
+
+def setup(client):
+    client.add_cog(Rank(client))
