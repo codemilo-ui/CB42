@@ -150,7 +150,7 @@ class DropDownMenu(discord.ui.View):
         discord.SelectOption(
             label="Information", description="Information commands", emoji="ℹ"),
         discord.SelectOption(
-            label="Settings", description="Settings commands", emoji=":wrench:"),
+            label="Settings", description="Settings commands", emoji="🔧"),
         discord.SelectOption(
             label="Level", description="Level commands", emoji="⬆")
     ])
