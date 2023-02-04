@@ -1,10 +1,12 @@
-import discord
 import os
+
 import certifi
+import discord
 from discord import *
 from discord.ext import commands
 from discord.ext.commands import *
 from pymongo import MongoClient
+
 e = certifi.where()
 mango_url = os.environ['MONGO']
 cluster = MongoClient(mango_url, tlsCAFile=e)

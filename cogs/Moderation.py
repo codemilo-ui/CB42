@@ -1,9 +1,9 @@
 import discord
+from defs import *
 from discord import *
 from discord.ext import commands
 from discord.ext.commands import *
 from discord.ui import *
-from defs import *
 
 
 class Moderation(commands.Cog):

@@ -1,9 +1,10 @@
 import random
+
 import aiohttp
 import discord
-from discord.ext import commands
-from discord.commands import slash_command
 from defs import *
+from discord.commands import slash_command
+from discord.ext import commands
 
 
 class Fun(commands.Cog):

@@ -1,13 +1,14 @@
 import asyncio
-from collections import defaultdict
 import datetime
+import io
 import os
 import random
+from collections import defaultdict
 from datetime import *
 from datetime import timedelta
+from io import *
 
 import aiohttp
-from googlesearch import search
 import certifi
 import discord
 import pymongo
@@ -17,12 +18,13 @@ from discord.ext import commands
 from discord.ext.commands import *
 from discord.ui import *
 from dotenv import load_dotenv
-from pymongo import MongoClient
+from googlesearch import search
 from PIL import Image, ImageDraw, ImageFont
-import io
-from io import *
-from defs import *
+from pymongo import MongoClient
+
 from badwords import *
+from defs import *
+
 load_dotenv()
 e = certifi.where()
 intents = discord.Intents().all()
