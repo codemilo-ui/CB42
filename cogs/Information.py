@@ -63,11 +63,12 @@ class Information(commands.Cog):
     @cooldown(1, 5, BucketType.user)
     async def credits(self, ctx):
         embed = discord.Embed(
-            title=f"Developers of [CB42](https://github.com/codemilo-ui/CB42)",
+            title=f"**Developers of CB42**",
             description=f"**CB42 was made by** [adzsx](https://github.com/adzsx) **and** [codemilo-ui](https://github.com/codemilo-ui)"
         )
+        embed.add_field(name="Source Code", value="You can find the source code of CB42 here - https://github.com/codemilo-ui/CB42", inline=True)
+        embed.set_thumbnail(url=self.bot.user.avatar_url)
         await ctx.respond(embed=embed)
-
 
 def setup(client):
     client.add_cog(Information(client))
