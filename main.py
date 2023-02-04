@@ -22,7 +22,7 @@ from PIL import Image, ImageDraw, ImageFont
 import io
 from io import *
 from defs import *
-
+from badwords import *
 load_dotenv()
 e = certifi.where()
 intents = discord.Intents().all()
@@ -31,10 +31,7 @@ mango_url = os.environ['MONGO']
 cluster = MongoClient(mango_url, tlsCAFile=e)
 db = cluster["cb42"]
 collection = db["level"]
-wel = db["welcomeandleave"]
-lev = db["welcomeandleave"]
 swear = db["swear"]
-antibot = db["botset"]
 warnings = {}
 timeout_duration = 60
 
@@ -69,51 +66,6 @@ async def status():
         await asyncio.sleep(10)
 
 
-def get_welcome_channel_id(server_id):
-    return wel.settings.find_one({"server_id": server_id, "name": "welcome_channel"})["channel_id"]
-
-
-def get_leave_channel_id(server_id):
-    return lev.settings.find_one({"server_id": server_id, "name": "leave_channel"})["channel_id"]
-
-
-def update_welcome_channel_id(server_id, channel_id):
-    wel.settings.update_one({"server_id": server_id, "name": "welcome_channel"}, {
-                            "$set": {"channel_id": channel_id}})
-
-
-def update_leave_channel_id(server_id, channel_id):
-    lev.settings.update_one({"server_id": server_id, "name": "leave_channel"}, {
-                            "$set": {"channel_id": channel_id}})
-
-
-async def send_welcome_message(member):
-    server_id = member.guild.id
-    channel_id = wel.settings.find_one(
-        {"server_id": server_id, "name": "welcome_channel"})["channel_id"]
-
-    channel = client.get_channel(channel_id)
-
-    welcome_message = f"Welcome to the server, {member.name}!"
-    embed = discord.Embed(title=welcome_message)
-    embed.set_thumbnail(url=member.avatar.url)
-
-    await channel.send(embed=embed)
-
-
-async def send_leave_message(member):
-    server_id = member.guild.id
-    channel_id = lev.settings.find_one(
-        {"server_id": server_id, "name": "leave_channel"})["channel_id"]
-
-    channel = client.get_channel(channel_id)
-
-    welcome_message = f"{member.name} has just left the server!"
-    embed = discord.Embed(title=welcome_message)
-
-    await channel.send(embed=embed)
-
-
 @client.event
 async def on_guild_join(guild):
     swear[str(guild.id)].insert_one(
@@ -123,10 +75,6 @@ async def on_guild_join(guild):
 @client.event
 async def on_member_join(member):
     await send_welcome_message(member)
-    guild_id = str(member.guild.id)
-    guild_settings = antibot.find_one({"guild_id": guild_id})
-    if guild_settings and guild_settings["anti_bot"] and member.bot:
-        await member.kick()
 
 
 @client.event
@@ -142,77 +90,7 @@ async def on_message_edit(before, after):
             await after.delete()
             return
 
-
-async def scam_check(message):
-    with open('blocked_links.json', 'r') as f1:
-        scam_links = json.load(f1)
-    scam_links = scam_links['domains']
-    for links in scam_links:
-        if links in message.content:
-            await message.delete()
-            await message.channel.send("You can't send this link! ❌", delete_after=3)
-
-
-class DropDownMenu(discord.ui.View):
-    @discord.ui.select(placeholder="Select a value", min_values=1, max_values=1, options=[
-        discord.SelectOption(label="Moderation",
-                             description="Moderation commands", emoji="🚩"),
-        discord.SelectOption(
-            label="Fun", description="Fun commands", emoji="🚀"),
-        discord.SelectOption(
-            label="Information", description="Information commands", emoji="ℹ"),
-        discord.SelectOption(
-            label="Level", description="Level commands", emoji="⬆")
-    ])
-    async def callback(self, select, interaction: discord.Interaction):
-        if select.values[0] == "Moderation":
-            view = View()
-            modembed = discord.Embed(
-                title="Moderation commands",
-                description="`clear`, `kick`, `ban`, `unban`, `membercount`, `setprefix`, `addrole`, `delrole`, `mute`, `unmute`, `set-welcome-channel`, `set-leave-channel`",
-            )
-
-            await interaction.response.send_message(embed=modembed, view=view, ephemeral=True)
-
-        if select.values[0] == "Fun":
-            view = View()
-            funembed = discord.Embed(
-                title="Fun commands",
-                description="`cat`, `dog`, `meme`, `showerthought`, `dice`, `password`, `eightball`",
-            )
-
-            await interaction.response.send_message(embed=funembed, view=view, ephemeral=True)
-
-        if select.values[0] == "Information":
-            view = View()
-            inembed = discord.Embed(
-                title="Information commands",
-                description="`invite`, `ping`, `credits`, `uptime`, `website-status`",
-            )
-
-            await interaction.response.send_message(embed=inembed, view=view, ephemeral=True)
-
-        if select.values[0] == "Level":
-            view = View()
-            lnembed = discord.Embed(
-                title="Level commands",
-                description="`rank`",
-            )
-
-            await interaction.response.send_message(embed=lnembed, view=view, ephemeral=True)
-
 # SLASH
-
-
-@client.slash_command(name="google", description="Google something...")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def google(ctx, query: Option(str)):
-    msg = await ctx.respond(f"Searching...🔍")
-    embed = discord.Embed(title=f"Search results",
-                          description=f"Query: {query}")
-    for j in search(query, num_results=4):
-        embed.add_field(name="Search result:", value=j)
-    await msg.edit(embed=embed)
 
 
 @client.slash_command(name="help", description="Get all the commands of the bot")
@@ -238,27 +116,6 @@ async def ping(ctx):
     await ctx.respond(f"The bots ping is: `{l}`", ephemeral=True)
 
 
-@client.slash_command(name="website-status", description="Check the status of a website")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def website_status(ctx, url: str):
-    try:
-        await ctx.defer()
-        req = requests.get(url)
-        await ctx.defer()
-        if req.status_code == 200:
-            embed = discord.Embed(
-                title="The website is running! ✅", description=f"`{url}` is up and running")
-            await ctx.respond(embed=embed)
-        else:
-            await ctx.defer()
-            embed = discord.Embed(title="The website is running! ✅",
-                                  description=f"`{url}` returned status code **{req.status_code}**")
-            await ctx.respond(embed=embed)
-    except:
-        await ctx.defer()
-        await ctx.respond(f'Error occured while checking the status of {url}', ephemeral=True)
-
-
 @client.slash_command(name="membercount", description="Get the membercount of the specific server")
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def membercount(ctx):
@@ -267,34 +124,6 @@ async def membercount(ctx):
                           description=f"**This server has** `{guild.member_count}` **members**")
 
     await ctx.respond(embed=embed)
-
-
-@client.slash_command(name="set-welcome-channel", description="Set the welcome channel")
-@commands.has_permissions(kick_members=True)
-async def setwelcomechannel(ctx, channel: discord.TextChannel):
-    existing_channel = wel.settings.find_one(
-        {"server_id": ctx.guild.id, "name": "welcome_channel"})
-    if existing_channel is None:
-        wel.settings.insert_one(
-            {"server_id": ctx.guild.id, "name": "welcome_channel", "channel_id": channel.id})
-    else:
-        wel.settings.update_one({"server_id": ctx.guild.id, "name": "welcome_channel"}, {
-                                "$set": {"channel_id": channel.id}})
-    await ctx.respond(f"The designated channel has been set to {channel.mention}.")
-
-
-@client.slash_command(name="set-leave-channel", description="Set the leave channel")
-@commands.has_permissions(kick_members=True)
-async def setleavechannel(ctx, channel: discord.TextChannel):
-    existing_channel = lev.settings.find_one(
-        {"server_id": ctx.guild.id, "name": "leave_channel"})
-    if existing_channel is None:
-        lev.settings.insert_one(
-            {"server_id": ctx.guild.id, "name": "leave_channel", "channel_id": channel.id})
-    else:
-        lev.settings.update_one({"server_id": ctx.guild.id, "name": "leave_channel"}, {
-                                "$set": {"channel_id": channel.id}})
-    await ctx.respond(f"The designated channel has been set to {channel.mention}.")
 
 
 @client.slash_command(name="avatar", description="Shows the profile pic of a member")
