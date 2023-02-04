@@ -1,3 +1,6 @@
+import datetime
+from datetime import *
+
 import discord
 from discord import *
 from discord.ext import commands
@@ -8,6 +11,18 @@ from discord.ui import *
 class Information(commands.Cog):
     def __init__(self, client):
         self.client = client
+
+    @slash_command(name="uptime", description="Check how long CB42 has been up for")
+    @cooldown(1, 5, commands.BucketType.user)
+    async def uptime(self, ctx):
+        delta_uptime = datetime.utcnow() - self.bot.launch_time
+        hours, remainder = divmod(int(delta_uptime.total_seconds()), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        days, hours = divmod(hours, 24)
+        embed = discord.Embed(title="**CB42's Uptime**",
+                              description=f"`CB42 has been online for -` {days}d, {hours}h, {minutes}m, {seconds}s")
+
+        await ctx.respond(embed=embed, ephemeral=True)
 
     @slash_command(name="ping", description="Get the bots latency")
     @cooldown(1, 15, BucketType.user)
@@ -23,7 +38,8 @@ class Information(commands.Cog):
                               description=f"**This server has** `{guild.member_count}` **members**")
 
         await ctx.respond(embed=embed)
-    @commands.command(name="avatar", description="Shows the profile pic of a member")
+
+    @slash_command(name="avatar", description="Shows the profile pic of a member")
     @cooldown(1, 5, BucketType.user)
     async def avatar(self, ctx, member: discord.Member = None):
         if member == None:
@@ -35,7 +51,7 @@ class Information(commands.Cog):
         embed.set_image(url=ava)
         await ctx.respond(embed=embed, ephemeral=True)
 
-    @commands.command(name="invite", description="Invite CB42 to your server")
+    @slash_command(name="invite", description="Invite CB42 to your server")
     @cooldown(1, 5, BucketType.user)
     async def invite(self, ctx):
         invitebt = discord.Button(
@@ -50,7 +66,7 @@ class Information(commands.Cog):
 
         await ctx.respond(embed=embed, view=view, ephemeral=True)
 
-    @commands.command(name="credits", description="Shows who made CB42")
+    @slash_command(name="credits", description="Shows who made CB42")
     @cooldown(1, 5, BucketType.user)
     async def credits(self, ctx):
         cbt_button = discord.Button(
@@ -66,6 +82,7 @@ class Information(commands.Cog):
         )
 
         await ctx.respond(embed=embed, view=view)
+
 
 def setup(client):
     client.add_cog(Information(client))
