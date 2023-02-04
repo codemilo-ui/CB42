@@ -87,7 +87,8 @@ def update_leave_channel_id(server_id, channel_id):
 
 
 async def send_welcome_message(member):
-    channel_id = get_welcome_channel_id()
+    server_id = guild.id
+    channel_id = get_welcome_channel_id(server_id)
 
     channel = client.get_channel(channel_id)
 
@@ -99,7 +100,8 @@ async def send_welcome_message(member):
 
 
 async def send_leave_message(member):
-    channel_id = get_leave_channel_id()
+    server_id = guild.id
+    channel_id = get_leave_channel_id(server_id)
 
     channel = client.get_channel(channel_id)
 
