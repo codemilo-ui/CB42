@@ -111,68 +111,6 @@ async def help(ctx):
     await ctx.respond(embed=embed, view=dropdowns)
 
 
-@client.slash_command(name="ping", description="Get the bots latency")
-@commands.cooldown(1, 15, commands.BucketType.user)
-async def ping(ctx):
-    l = round(client.latency * 1000, 1)
-    await ctx.respond(f"The bots ping is: `{l}`", ephemeral=True)
-
-
-@client.slash_command(name="membercount", description="Get the membercount of the specific server")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def membercount(ctx):
-    guild = ctx.guild
-    embed = discord.Embed(title="Membercount of this server",
-                          description=f"**This server has** `{guild.member_count}` **members**")
-
-    await ctx.respond(embed=embed)
-
-
-@client.slash_command(name="avatar", description="Shows the profile pic of a member")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def avatar(ctx, member: discord.Member = None):
-    if member == None:
-        member = ctx.author
-    ava = member.avatar.url
-    e = member.id
-    embed = discord.Embed(
-        title=f"Avatar of {member.name}#{member.discriminator}")
-    embed.set_image(url=ava)
-    await ctx.respond(embed=embed, ephemeral=True)
-
-
-@client.slash_command(name="invite", description="Invite CB42 to your server")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def invite(ctx):
-    invitebt = Button(
-        label="Invite CB42",
-        url="https://discord.com/api/oauth2/authorize?client_id=1004727274031038574&permissions=8&redirect_uri=https%3A%2F%2Fcb42bot.tk&response_type=code&scope=bot%20connections%20applications.commands"
-    )
-    view = View()
-    view.add_item(invitebt)
-
-    embed = discord.Embed(title=f"Invite {client.user.name}",
-                          description=f"Invite CB42 from [here](https://discord.com/api/oauth2/authorize?client_id=1004727274031038574&permissions=8&redirect_uri=https%3A%2F%2Fcb42bot.tk&response_type=code&scope=bot%20connections%20applications.commands)")
-
-    await ctx.respond(embed=embed, view=view, ephemeral=True)
-
-
-@client.slash_command(name="credits", description="Shows who made CB42")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def credits(ctx):
-    cbt = Button(
-        label="Github",
-        url="https://github.com/CB42Bot/CB42"
-    )
-    view = View()
-    view.add_item(cbt)
-
-    embed = discord.Embed(title=f"Developers of {client.user.name}",
-                          description=f"CB42 was made by [sudo-adrian](https://github.com/sudo-adrian) and [codemilo-ui](https://github.com/codemilo-ui)")
-
-    await ctx.respond(embed=embed, view=view, ephemeral=True)
-
-
 @client.slash_command(name="password", description="Makes you a random password")
 @commands.cooldown(1, 15, commands.BucketType.user)
 async def password(ctx):
