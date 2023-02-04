@@ -82,6 +82,7 @@ async def on_message_edit(before, after):
             await after.delete()
             return
 
+
 @client.event
 async def on_message(message):
     if message.author.id == client.user.id:
