@@ -12,7 +12,7 @@ class Fun(commands.Cog):
         self.client = client
 
     @slash_command(name="dog", description="Get a random dog pic")
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @cooldown(1, 5, commands.BucketType.user)
     async def dog(self, ctx):
         async with aiohttp.ClientSession() as session:
             request = await session.get('https://some-random-api.ml/img/dog')
@@ -23,7 +23,7 @@ class Fun(commands.Cog):
         await ctx.respond(embed=embed)
 
     @slash_command(name="cat", description="Get a random cat pic")
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @cooldown(1, 5, commands.BucketType.user)
     async def cat(self, ctx):
         async with aiohttp.ClientSession() as session:
             request = await session.get('https://some-random-api.ml/img/cat')
@@ -34,7 +34,7 @@ class Fun(commands.Cog):
         await ctx.respond(embed=embed)
 
     @slash_command(name="dice", description="Get a random number form 1 to 6")
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @cooldown(1, 5, commands.BucketType.user)
     async def dice(self, ctx):
         num = [
             '1',
@@ -46,7 +46,7 @@ class Fun(commands.Cog):
         await ctx.respond(f"Your random number is: {random.choice(num)}")
 
     @slash_command(name="eightball", description="Ask some questions!", aliases=["8ball"])
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @cooldown(1, 5, commands.BucketType.user)
     async def eightball(self, ctx, *, question: str):
         responses = [
             'Hell no.',
@@ -79,7 +79,7 @@ class Fun(commands.Cog):
         await ctx.respond(embed=eightbembed)
 
     @slash_command(name="meme", description="Get a random meme from reddit")
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @cooldown(1, 5, commands.BucketType.user)
     async def meme(self, ctx):
         embed = discord.Embed(title="Meme")
 
@@ -92,17 +92,17 @@ class Fun(commands.Cog):
                 await ctx.respond(embed=embed)
 
     @slash_command(name="fact", description="Get a random fact")
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @cooldown(1, 5, commands.BucketType.user)
     async def fact(self, ctx):
         await ctx.respond(get_fact())
 
     @slash_command(name="topic", description="Get a random topic")
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @cooldown(1, 5, commands.BucketType.user)
     async def topic(self, ctx):
         await ctx.respond(get_topic())
 
     @slash_command(name="showerthough", description="Get a random showerthought from reddit", aliases=["showerthought", "st"])
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @cooldown(1, 5, commands.BucketType.user)
     async def showerthought(self, ctx):
         shower = get_shower()
         thought = shower[0]

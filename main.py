@@ -1,9 +1,5 @@
-import asyncio
 import datetime
-import io
 import os
-import random
-from collections import defaultdict
 from datetime import *
 from datetime import timedelta
 from io import *
@@ -12,14 +8,10 @@ import aiohttp
 import certifi
 import discord
 import pymongo
-from bs4 import BeautifulSoup
 from discord import *
 from discord.ext import commands
 from discord.ext.commands import *
-from discord.ui import *
 from dotenv import load_dotenv
-from googlesearch import search
-from PIL import Image, ImageDraw, ImageFont
 from pymongo import MongoClient
 
 from database.badwords import *
@@ -34,8 +26,6 @@ cluster = MongoClient(mango_url, tlsCAFile=e)
 db = cluster["cb42"]
 collection = db["level"]
 swear = db["swear"]
-warnings = {}
-timeout_duration = 60
 
 client = commands.Bot(command_prefix=".",
                       case_insensitive=True, help_command=None, intents=intents)
@@ -92,11 +82,9 @@ async def on_message_edit(before, after):
             await after.delete()
             return
 
-# SLASH
-
 
 @client.slash_command(name="help", description="Get all the commands of the bot")
-@commands.cooldown(1, 5, commands.BucketType.user)
+@cooldown(1, 5, commands.BucketType.user)
 async def help(ctx):
     embed = discord.Embed(
         title="CB42 help panel",
@@ -112,41 +100,11 @@ async def help(ctx):
 
 
 @client.slash_command(name="password", description="Makes you a random password")
-@commands.cooldown(1, 15, commands.BucketType.user)
+@cooldown(1, 15, commands.BucketType.user)
 async def password(ctx):
     author = ctx.author
     await ctx.respond("Check your DM's‼", ephemeral=True)
     await ctx.author.send(f"Your secret password is: `{am}`")
-
-
-@client.slash_command(name="rank", description="Shows the rank of a user")
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def rank(ctx):
-    author_id = ctx.author.id
-    level = collection.find_one(
-        {"_id": author_id})["Level"]
-    xp = collection.find_one({"_id": author_id})["XP"]
-
-    if author_id is None:
-        await ctx.respond("You did not level in this server yet!")
-
-    ava = ctx.author.avatar.url
-    response = requests.get(ava)
-    imge = Image.open(BytesIO(response.content))
-    imge = imge.resize((100, 100))
-    img = Image.new("RGB", (400, 200), color=(73, 80, 87))
-    img.paste(imge, (290, 10))
-    draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype("./assets/arial.ttf", 36)
-    draw.text((10, 10), f"Level: {level}", font=font, fill=(255, 255, 255))
-    draw.text((10, 130), "XP", font=font, fill=(255, 255, 255))
-    draw.rectangle([(10, 170), (10 + xp * 0.3, 190)], fill=(247, 134, 28))
-
-    img.save("rank.png")
-    with open("rank.png", "rb") as f:
-        await ctx.respond(file=discord.File(f))
-
-# SLASH
 
 
 @client.event

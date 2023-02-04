@@ -11,7 +11,7 @@ class Moderation(commands.Cog):
         self.client = client
 
     @slash_command(name='mute', description="mutes a member")
-    @commands.has_permissions(kick_members=True)
+    @has_permissions(kick_members=True)
     @option("user", discord.Member, description="Whom you want mute?")
     @option("duration", description="How long they should be muted?")
     @option("duration_type", description="How long should they be muted?", choices=["Seconds", "Hours", "Days"])
@@ -76,7 +76,7 @@ class Moderation(commands.Cog):
         await ctx.respond(f"Added {role} to {user.mention}")
 
     @slash_command(description="Kick a member from the server")
-    @commands.has_permissions(kick_members=True)
+    @has_permissions(kick_members=True)
     async def kick(self, ctx, user: discord.Option(discord.Member, description="Please select a user to kick", required=True), reason: discord.Option(str, description="Why do you want to kick?", required=False)):
         if user.id == ctx.author.id:
             await ctx.respond(embed=discord.Embed(description=f"*You can't kick yourself*", color=discord.Color.red()))
@@ -127,7 +127,7 @@ class Moderation(commands.Cog):
         cancel.callback = button2_callback
 
     @slash_command(description="Bans a member from the server")
-    @commands.has_permissions(ban_members=True)
+    @has_permissions(ban_members=True)
     async def ban(self, ctx, user: discord.Option(discord.Member, description="Please select a user to ban", required=True), reason: discord.Option(str, description="Why do you want to kick?", required=False)):
         if user.id == ctx.author.id:
             await ctx.respond(embed=discord.Embed(description=f"*You can't ban yourself*", color=discord.Color.red()))

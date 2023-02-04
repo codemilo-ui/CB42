@@ -2,6 +2,7 @@ import os
 
 import certifi
 import discord
+import pymongo
 from discord import *
 from discord.ext import commands
 from discord.ext.commands import *
@@ -20,7 +21,7 @@ class Settings(commands.Cog):
         self.client = client
 
     @slash_command(name="set-welcome-channel", description="Set the welcome channel")
-    @commands.has_permissions(kick_members=True)
+    @has_permissions(kick_members=True)
     async def setwelcomechannel(self, ctx, channel: discord.TextChannel):
         existing_channel = wel.settings.find_one(
             {"server_id": ctx.guild.id, "name": "welcome_channel"})
@@ -33,7 +34,7 @@ class Settings(commands.Cog):
         await ctx.respond(f"The designated channel has been set to {channel.mention}.")
 
     @slash_command(name="set-leave-channel", description="Set the leave channel")
-    @commands.has_permissions(kick_members=True)
+    @has_permissions(kick_members=True)
     async def setleavechannel(self, ctx, channel: discord.TextChannel):
         existing_channel = lev.settings.find_one(
             {"server_id": ctx.guild.id, "name": "leave_channel"})
@@ -46,8 +47,8 @@ class Settings(commands.Cog):
         await ctx.respond(f"The designated channel has been set to {channel.mention}.")
 
     @slash_command(name="toggle-swear", description="Turn the swear filter on and off")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.has_permissions(ban_members=True)
+    @cooldown(1, 5, commands.BucketType.user)
+    @has_permissions(ban_members=True)
     async def toggle_swear(self, ctx, status: discord.Option(str, required=True, choices=['Enabled', 'Disabled'])):
         settings = swear[str(ctx.guild.id)].find_one(
             {"guild_id": ctx.guild.id})
