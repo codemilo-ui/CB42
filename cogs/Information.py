@@ -55,7 +55,7 @@ class Information(commands.Cog):
     @cooldown(1, 5, BucketType.user)
     async def invite(self, ctx):
         embed = discord.Embed(title=f"Invite {self.client.user.name}",
-                              description=f"Invite CB42 from [here](https://discord.com/api/oauth2/authorize?client_id=1004727274031038574&permissions=8&redirect_uri=https%3A%2F%2Fcb42bot.tk&response_type=code&scope=bot%20connections%20applications.commands)")
+                              description=f"`Invite CB42 from` [here](https://discord.com/api/oauth2/authorize?client_id=1004727274031038574&permissions=8&redirect_uri=https%3A%2F%2Fcb42bot.tk&response_type=code&scope=bot%20connections%20applications.commands)")
 
         await ctx.respond(embed=embed, ephemeral=True)
 
@@ -63,10 +63,10 @@ class Information(commands.Cog):
     @cooldown(1, 5, BucketType.user)
     async def credits(self, ctx):
         embed = discord.Embed(
-            title=f"Developers of [CB42](https://github.com/codemilo-ui/CB42)",
-            description=f"CB42 was made by [adzsx](https://github.com/adzsx) and [codemilo-ui](https://github.com/codemilo-ui)"
+            title=f"**Developers of** [CB42](https://github.com/codemilo-ui/CB42)",
+            description=f"`CB42 was made by` [adzsx](https://github.com/adzsx) `and` [codemilo-ui](https://github.com/codemilo-ui)"
         )
-        await ctx.respond(embed=embed, view=view)
+        await ctx.respond(embed=embed)
 
 
 def setup(client):
