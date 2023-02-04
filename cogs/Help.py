@@ -18,7 +18,7 @@ class Help(commands.Cog):
             cog_commands = self.client.get_cog(cog).get_commands()
             command_list = ""
             for command in cog_commands:
-                command_list += f"{command.name}\n"
+                command_list += f"`{command.name}`, \n"
 
             embed = discord.Embed(
                 title=f"{cog} Commands",
