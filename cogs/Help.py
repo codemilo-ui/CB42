@@ -4,6 +4,13 @@ from discord.ext import commands
 from discord.ext.commands import *
 from discord.ui import *
 from defs import *
+import psutil
+
+mem_usage = psutil.virtual_memory()
+
+print(f"Free: {mem_usage.percent}%")
+print(f"Total: {mem_usage.total/(1024**3):.2f}G")
+print(f"Used: {mem_usage.used/(1024**3):.2f}G")
 
 
 class Help(commands.Cog):
@@ -25,6 +32,16 @@ class Help(commands.Cog):
         dropdowns = DropDownMenu(timeout=60)
 
         await ctx.respond(embed=embed, view=dropdowns)
+
+    @slash_command(name="usage", description="Get all the commands of the bot")
+    @cooldown(1, 5, commands.BucketType.user)
+    async def usage(self, ctx):
+        embed = discord.Embed(
+            title="CB42 help panel",
+            url="https://cb42bot.tk",
+            description=f"Free: {mem_usage.percent}%"
+        )
+        await ctx.respond(embed=embed)
 
 
 def setup(client):

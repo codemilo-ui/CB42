@@ -2,6 +2,7 @@ py-cord
 certifi
 PyNaCl
 motor
+psutil
 requests
 randfacts
 pymongo
