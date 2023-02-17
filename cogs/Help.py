@@ -27,26 +27,25 @@ class Help(commands.Cog):
 
         await ctx.respond(embed=embed, view=dropdowns)
 
-    @slash_command(name="usage", description="Get all the commands of the bot")
+    @slash_command(name="usage", description="CB42 resource usage")
     @cooldown(1, 5, commands.BucketType.user)
     async def usage(self, ctx):
         embed = discord.Embed(
-            title="CB42 help panel",
-            url="https://cb42bot.tk",
+            title="CB42 host",
             description=f"**CB42 runs on:**"
         )
-        embed.add_field(name="OS", value=psutil.os.name, inline=False)
+        embed.add_field(name="OS", value=f"`{psutil.os.name}`", inline=False)
 
         cpu_usage = psutil.cpu_percent(interval=1)
-        embed.add_field(name="CPU usage", value=f"{cpu_usage}%", inline=False)
+        embed.add_field(name="CPU usage", value=f"`{cpu_usage}%`", inline=False)
 
         mem = psutil.virtual_memory()
         mem_usage = mem.used / mem.total * 100
         embed.add_field(name="Memory usage",
-                        value=f"{round(mem_usage, 2)}%", inline=False)
+                        value=f"`{round(mem_usage, 2)}%`", inline=False)
 
         num_cores = psutil.cpu_count(logical=False)
-        embed.add_field(name="CPU cores", value=num_cores, inline=False)
+        embed.add_field(name="CPU cores", value=f"`{num_cores}`", inline=False)
         await ctx.respond(embed=embed)
 
 

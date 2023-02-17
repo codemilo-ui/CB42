@@ -182,7 +182,7 @@ class DropDownMenu(discord.ui.View):
             view = View()
             inembed = discord.Embed(
                 title="Information commands",
-                description="`uptime`, `ping`, `membercount`, `avatar`, `invite`, `credits`, `help`",
+                description="`uptime`, `ping`, `membercount`, `avatar`, `invite`, `credits`, `help`, `usage`",
             )
 
             await interaction.response.send_message(embed=inembed, view=view, ephemeral=True)
