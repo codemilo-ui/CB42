@@ -6,12 +6,6 @@ from discord.ui import *
 from defs import *
 import psutil
 
-mem_usage = psutil.virtual_memory()
-
-print(f"Free: {mem_usage.percent}%")
-print(f"Total: {mem_usage.total/(1024**3):.2f}G")
-print(f"Used: {mem_usage.used/(1024**3):.2f}G")
-
 
 class Help(commands.Cog):
 
@@ -39,8 +33,20 @@ class Help(commands.Cog):
         embed = discord.Embed(
             title="CB42 help panel",
             url="https://cb42bot.tk",
-            description=f"Free: {mem_usage.percent}%"
+            description=f"**CB42 runs on:**"
         )
+        embed.add_field(name="OS", value=psutil.os.name, inline=False)
+
+        cpu_usage = psutil.cpu_percent(interval=1)
+        embed.add_field(name="CPU usage", value=f"{cpu_usage}%", inline=False)
+
+        mem = psutil.virtual_memory()
+        mem_usage = mem.used / mem.total * 100
+        embed.add_field(name="Memory usage",
+                        value=f"{round(mem_usage, 2)}%", inline=False)
+
+        num_cores = psutil.cpu_count(logical=False)
+        embed.add_field(name="CPU cores", value=num_cores, inline=False)
         await ctx.respond(embed=embed)
 
 
