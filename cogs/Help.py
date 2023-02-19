@@ -18,7 +18,8 @@ class Help(commands.Cog):
         embed = discord.Embed(
             title="CB42 help panel",
             url="https://cb42bot.tk",
-            description="CB42 is an all in one bot you ever need.."
+            description="CB42 is an all in one bot you ever need..",
+            colour=0x2F3136
         )
         embed.set_image(
             url="https://cdn.discordapp.com/attachments/943039554108133378/1005764186485305345/standard.gif")
